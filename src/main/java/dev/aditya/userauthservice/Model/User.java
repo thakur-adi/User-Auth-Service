@@ -7,6 +7,8 @@ import jakarta.persistence.ManyToMany;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -18,9 +20,10 @@ public class User extends Base{
     private String name;
     private String email;
     private String password;
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth; //Date is a legacy system. 'LocalDate' brings many benefits over 'Date' like no "Time Zone Shift",thread safety etc.
     private String phoneNumber;
-    private  String address;
+    private String address;
     @ManyToMany
-    private List<Role> roles;
+    private List<Role> roles = new ArrayList<>();
+
 }

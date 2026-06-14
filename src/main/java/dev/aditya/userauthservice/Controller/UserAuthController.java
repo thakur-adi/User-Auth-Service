@@ -1,16 +1,16 @@
 package dev.aditya.userauthservice.Controller;
 
-import dev.aditya.userauthservice.Dto.SignupRequestDTO;
-import dev.aditya.userauthservice.Dto.SignupResponseDTO;
+import dev.aditya.userauthservice.Dto.*;
+import dev.aditya.userauthservice.Exceptions.UserAlreadyExistsException;
+import dev.aditya.userauthservice.Model.User;
 import dev.aditya.userauthservice.Service.IUserAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.zip.DataFormatException;
 
 @RestController
 @RequestMapping("/user")
@@ -20,7 +20,38 @@ public class UserAuthController {
     IUserAuthService userAuthService;
 
     @PostMapping("/signup")
-    public ResponseEntity<SignupResponseDTO> signup(@RequestBody SignupRequestDTO signupRequestDTO){
+    public ResponseEntity<SignupResponseDTO> signupUser(@RequestBody SignupRequestDTO signupRequestDTO) throws UserAlreadyExistsException, DataFormatException {
+
+        User newUser = userAuthService.signUp(signupRequestDTO.getName(),signupRequestDTO.getEmail(),signupRequestDTO.getPassword(),
+                                              signupRequestDTO.getDateOfBirth(),signupRequestDTO.getPhoneNumber(),
+                                              signupRequestDTO.getAddress(),signupRequestDTO.getRole());
+
+        SignupResponseDTO newSignupResponseDTO = new SignupResponseDTO();
+        newSignupResponseDTO.from(newUser);
+
+        return new ResponseEntity<>(newSignupResponseDTO,HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDTO> loginUser(@RequestBody LoginRequestDTO loginRequestDTO){
+
+        return null;
+
+    }
+    @GetMapping("/profile")
+    public ResponseEntity<ProfileResponseDTO> viewUserProfile(@PathVariable String userEmail ){
+
+        return null;
+
+    }
+    @PutMapping("/profile")
+    public ResponseEntity<ProfileResponseDTO> updateUserProfile(@RequestBody ProfileRequestDTO profileRequestDTO){
+
+        return null;
+
+    }
+    @PostMapping("/reset")
+    public ResponseEntity<String> resetUserPassword(@RequestBody ResetPasswordRequestDTO resetPasswordRequestDTO){
 
         return null;
 
