@@ -1,13 +1,13 @@
 package dev.aditya.userauthservice.Exceptions;
 
-public class SessionNotExist extends Exception{
+public class SessionNotExistException extends Exception{
 
     public static String defaultMessage = "Session is invalid. It doesn't Exist anymore";
 
-    public SessionNotExist(){
+    public SessionNotExistException(){
         super(defaultMessage);
     }
-    public SessionNotExist(String message){
+    public SessionNotExistException(String message){
         super(message);
     }
 }
