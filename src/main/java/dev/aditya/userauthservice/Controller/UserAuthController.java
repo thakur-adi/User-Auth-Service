@@ -27,7 +27,7 @@ public class UserAuthController {
                                               signupRequestDTO.getAddress(),signupRequestDTO.getRole());
 
         SignupResponseDTO newSignupResponseDTO = new SignupResponseDTO();
-        newSignupResponseDTO.from(newUser);
+        newSignupResponseDTO.convertToDtoFrom(newUser);
 
         return new ResponseEntity<>(newSignupResponseDTO,HttpStatus.CREATED);
     }
@@ -38,6 +38,13 @@ public class UserAuthController {
         return null;
 
     }
+    @PostMapping("/logout")
+    public ResponseEntity<String> logoutUser(@RequestBody LogoutRequestDTO logoutRequestDTO){
+
+        return null;
+
+    }
+
     @GetMapping("/profile")
     public ResponseEntity<ProfileResponseDTO> viewUserProfile(@PathVariable String userEmail ){
 

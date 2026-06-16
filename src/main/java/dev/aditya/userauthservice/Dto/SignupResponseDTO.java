@@ -13,13 +13,14 @@ import java.util.List;
 @Setter
 @JsonPropertyOrder({"message","name","email","roles"})
 public class SignupResponseDTO {
-    private final String message ="You have been successfully registered! Please login using registered Email and Password!!"; //can't make it static as jackson ignores static while serialization/deserialization
     private String name;
     private String email;
     private List<String> roles;
+    //can't make it static as jackson ignores static while serialization/deserialization
+    private final String message ="Hello "+name.toUpperCase()+ "! You have been successfully registered! Please login using registered Email {" + email +" } and Password!!";
 
     //convert from User
-    public SignupResponseDTO from(User user){
+    public SignupResponseDTO convertToDtoFrom(User user){
         this.setName(user.getName());
         this.setEmail(user.getEmail());
         this.setRoles(convertRoles(user.getRoles()));
