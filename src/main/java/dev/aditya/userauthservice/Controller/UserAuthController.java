@@ -1,10 +1,7 @@
 package dev.aditya.userauthservice.Controller;
 
 import dev.aditya.userauthservice.Dto.*;
-import dev.aditya.userauthservice.Exceptions.CredentialMismatchException;
-import dev.aditya.userauthservice.Exceptions.SessionNotExistException;
-import dev.aditya.userauthservice.Exceptions.UserAlreadyExistsException;
-import dev.aditya.userauthservice.Exceptions.UserNotFoundException;
+import dev.aditya.userauthservice.Exceptions.*;
 import dev.aditya.userauthservice.Model.Session;
 import dev.aditya.userauthservice.Model.User;
 import dev.aditya.userauthservice.Service.IUserAuthService;
@@ -47,9 +44,17 @@ public class UserAuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logoutUser(@RequestBody LogoutRequestDTO logoutRequestDTO) throws UserNotFoundException, SessionNotExistException {
-        Session session = userAuthService.logout(logoutRequestDTO.getEmail(), logoutRequestDTO.getAuthToken());
+        Session session = userAuthService.logout(logoutRequestDTO.getRefreshToken());
         return new ResponseEntity<>("GoodeBye "+session.getUser().getName()+"!! Hope to see you soon!",HttpStatus.OK);
 
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshTokenDTO> refreshToken(@RequestHeader String refreshToken) throws SessionNotExistException, InvalidTokenException, UserNotFoundException {
+        Session session = userAuthService.refresh(refreshToken);
+        RefreshTokenDTO refreshTokenDTO = new RefreshTokenDTO();
+        refreshTokenDTO.convertToDtoFrom(session);
+        return new ResponseEntity<>(refreshTokenDTO,HttpStatus.CREATED);
     }
 
     @GetMapping("/profile")

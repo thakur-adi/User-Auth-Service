@@ -1,17 +1,16 @@
 package dev.aditya.userauthservice.Service;
 
-import dev.aditya.userauthservice.Exceptions.CredentialMismatchException;
-import dev.aditya.userauthservice.Exceptions.SessionNotExistException;
-import dev.aditya.userauthservice.Exceptions.UserAlreadyExistsException;
-import dev.aditya.userauthservice.Exceptions.UserNotFoundException;
+import dev.aditya.userauthservice.Exceptions.*;
 import dev.aditya.userauthservice.Model.*;
 import dev.aditya.userauthservice.Repository.RoleRepository;
 import dev.aditya.userauthservice.Repository.SessionRepository;
 import dev.aditya.userauthservice.Repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
 import java.time.LocalDate;
@@ -53,31 +52,31 @@ public class UserAuthService implements IUserAuthService{
     @Override
     public Session login(String email, String password) throws UserNotFoundException, CredentialMismatchException {
 
-        User existingUser = getValidUser(email);
+        User existingUser = validateUser(email);
 
         if (!bCryptPasswordEncoder.matches(password,existingUser.getPassword())) {
             throw new CredentialMismatchException("Wrong Email-Id or Password. Please try again!!");
         }
-
-        Session newSession = new Session();
-        newSession.setAuthToken(generateJWT(TokenType.AUTH,existingUser));
-        newSession.setRefreshToken(generateJWT(TokenType.REFRESH, existingUser));
-        newSession.setUser(getValidUser(email));
-
+        Session newSession = buildNewSession(existingUser);
         return sessionRepository.save(newSession);
     }
 
     @Override
-    public Session logout(String email, String authToken) throws UserNotFoundException, SessionNotExistException {
-        User existingUser = getValidUser(email);
-        if(sessionRepository.findByAuthToken(authToken).isEmpty() || !sessionRepository.findByAuthToken(authToken).equals(sessionRepository.findByUser(existingUser)) || sessionRepository.findByAuthToken(authToken).get().getCurrentStatus().equals(Status.DELETED))
-        {
-            throw new SessionNotExistException("The session you are looking for doesn't exist. Please provide proper Email and Token!");
-        }
-        Session existingSession = sessionRepository.findByAuthToken(authToken).get();
+    public Session logout(String refreshToken) throws SessionNotExistException {
+        Session existingSession = validateSession(refreshToken,TokenType.REFRESH);
         existingSession.setCurrentStatus(Status.DELETED);
         return sessionRepository.save(existingSession);
     }
+
+    @Override
+    public Session refresh(String refreshToken) throws SessionNotExistException, InvalidTokenException, UserNotFoundException {
+        Claims claims = validateToken(refreshToken,TokenType.REFRESH);
+        Session existingSession  = validateSession(refreshToken,TokenType.REFRESH);
+        Session newSession = buildNewSession(validateUser(claims.getSubject()));
+        newSession.setId(existingSession.getId());
+        return sessionRepository.save(newSession);
+    }
+
 
 
     //HELPER METHODS
@@ -157,14 +156,54 @@ public class UserAuthService implements IUserAuthService{
         }
 
     //Validation helper as Session table contains a reference for User object which will fail at runtime as Hibernate expects a validity check for nested objects
-    private User getValidUser(String email) throws UserNotFoundException {
+    private User validateUser(String email) throws UserNotFoundException {
         Optional<User> optionalUser = userRepository.findByEmail(email);
-        if(optionalUser.isEmpty() || optionalUser.get().getCurrentStatus().equals(Status.DELETED)) {
+        if(optionalUser.isEmpty() || optionalUser.get().getCurrentStatus().equals(Status.DELETED)){
             throw new UserNotFoundException("User with email:"+email+"not found or has been Banned! Please Signup first then continue!!");
         }
         return optionalUser.get();
     }
 
     //helper method for creation of a new session on every login,refresh
+    private Session buildNewSession(User existingUser){
+        Session session = new Session();
+        session.setAuthToken(generateJWT(TokenType.AUTH,existingUser));
+        session.setRefreshToken(generateJWT(TokenType.REFRESH, existingUser));
+        session.setUser(existingUser);
+        return session;
+    }
+
+    //Validates the incoming Token and returns a proper valid claim
+    private Claims validateToken(String token,TokenType tokenType) throws InvalidTokenException, SessionNotExistException {
+        try{
+            Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
+            String email = claims.getSubject();
+            if(claims.isEmpty() || email == null ){
+                throw new InvalidTokenException("Token provided is Invalid. Please try again!");
+            }
+
+            Session session = validateSession(token, tokenType);
+            User user = validateUser(email);
+            return claims;
+        }
+        catch(UserNotFoundException | SessionNotExistException e){
+            throw new InvalidTokenException("Token provided is Invalid. Please try again!");
+        }
+    }
+
+    //validates the session by different token types
+    private Session validateSession(String token, TokenType tokenType) throws SessionNotExistException {
+        Optional<Session> existingSession;
+        if(tokenType.equals(TokenType.REFRESH)){
+            existingSession= sessionRepository.findByRefreshToken(token);
+        }
+        else{
+             existingSession = sessionRepository.findByAuthToken(token);
+        }
+        if(existingSession.isEmpty() || existingSession.get().getCurrentStatus().equals(Status.DELETED)){
+            throw new SessionNotExistException("Session doesn't exist! Please Login again!!");
+        }
+        return existingSession.get();
+    }
 
 }
