@@ -1,7 +1,11 @@
 package dev.aditya.userauthservice.Controller;
 
 import dev.aditya.userauthservice.Dto.*;
+import dev.aditya.userauthservice.Exceptions.CredentialMismatchException;
+import dev.aditya.userauthservice.Exceptions.SessionNotExistException;
 import dev.aditya.userauthservice.Exceptions.UserAlreadyExistsException;
+import dev.aditya.userauthservice.Exceptions.UserNotFoundException;
+import dev.aditya.userauthservice.Model.Session;
 import dev.aditya.userauthservice.Model.User;
 import dev.aditya.userauthservice.Service.IUserAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +26,7 @@ public class UserAuthController {
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signupUser(@RequestBody SignupRequestDTO signupRequestDTO) throws UserAlreadyExistsException, DataFormatException {
 
-        User newUser = userAuthService.signUp(signupRequestDTO.getName(),signupRequestDTO.getEmail(),signupRequestDTO.getPassword(),
+        User newUser = userAuthService.signup(signupRequestDTO.getName(),signupRequestDTO.getEmail(),signupRequestDTO.getPassword(),
                                               signupRequestDTO.getDateOfBirth(),signupRequestDTO.getPhoneNumber(),
                                               signupRequestDTO.getAddress(),signupRequestDTO.getRole());
 
@@ -33,15 +37,18 @@ public class UserAuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> loginUser(@RequestBody LoginRequestDTO loginRequestDTO){
-
-        return null;
+    public ResponseEntity<LoginResponseDTO> loginUser(@RequestBody LoginRequestDTO loginRequestDTO) throws UserNotFoundException, CredentialMismatchException {
+        Session newSession = userAuthService.login(loginRequestDTO.getEmail(),loginRequestDTO.getPassword());
+        LoginResponseDTO loginResponseDTO = new LoginResponseDTO();
+        loginResponseDTO.convertToDtoFromSession(newSession);
+        return new ResponseEntity<>(loginResponseDTO,HttpStatus.OK);
 
     }
-    @PostMapping("/logout")
-    public ResponseEntity<String> logoutUser(@RequestBody LogoutRequestDTO logoutRequestDTO){
 
-        return null;
+    @PostMapping("/logout")
+    public ResponseEntity<String> logoutUser(@RequestBody LogoutRequestDTO logoutRequestDTO) throws UserNotFoundException, SessionNotExistException {
+        Session session = userAuthService.logout(logoutRequestDTO.getEmail(), logoutRequestDTO.getAuthToken());
+        return new ResponseEntity<>("GoodeBye "+session.getUser().getName()+"!! Hope to see you soon!",HttpStatus.OK);
 
     }
 

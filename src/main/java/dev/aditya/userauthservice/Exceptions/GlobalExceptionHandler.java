@@ -28,12 +28,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleSessionNotExistException(SessionNotExistException e){
         return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException e){
         return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<String> handleUserAlreadyExistsException(UserAlreadyExistsException e){
         return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
     }
+
 }
