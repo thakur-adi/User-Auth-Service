@@ -17,13 +17,14 @@ public class SignupResponseDTO {
     private String email;
     private List<String> roles;
     //can't make it static as jackson ignores static while serialization/deserialization
-    private final String message ="Hello "+name.toUpperCase()+ "! You have been successfully registered! Please login using registered Email {" + email +" } and Password!!";
+    private String message;
 
     //convert from User
     public SignupResponseDTO convertToDtoFrom(User user){
         this.setName(user.getName());
         this.setEmail(user.getEmail());
         this.setRoles(convertRoles(user.getRoles()));
+        this.setMessage("Hello "+name.toUpperCase()+ "! You have been successfully registered! Please login using registered Email '" + email +"' and Password!!");
         return this;
     }
 

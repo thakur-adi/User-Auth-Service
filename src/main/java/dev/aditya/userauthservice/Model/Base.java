@@ -7,7 +7,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDate;
 import java.util.Date;
 
 @Getter
@@ -21,15 +20,12 @@ public abstract class Base {
     private Long id;
 
     @CreatedDate //tells Spring Data JPA to automatically populate this var with the current system timestamp, the exact moment the record is inserted into the database.
-    private LocalDate createdAt; //Date is a legacy system. 'LocalDate' brings many benefits over 'Date' like no "Time Zone Shift",thread safety etc.
+    private Date createdAt; //Date contains current time as well. Better for these scenarios like Creation Date or Modification Date. D.O.B would benefit from Local Date
 
     @LastModifiedDate //it updates every single time a record is changed in the database
-    private LocalDate lastUpdatedAt;
+    private Date lastUpdatedAt;
 
-    @Enumerated(EnumType.STRING)
-    private Status currentStatus;
 
-    Base(){
-        this.currentStatus = Status.ACTIVE;
-    }
+    private Status currentStatus = Status.ACTIVE;
+
 }

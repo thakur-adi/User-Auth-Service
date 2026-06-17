@@ -11,6 +11,9 @@ import lombok.Setter;
 @Entity
 public class Session extends Base{
 
+    //Modern WebTokens can get very large, easily can cross 1000 characters as they contain roles,expiry etc.
+    // In MySQL better change the column from standard VARCHAR(255) to TEXT (MAX size: upto 64kb allowed)
+    // doesn't mean it takes all 64kb, only consumes the exact number of bytes your token actually uses.
     private String authToken;
     private String refreshToken;
     @ManyToOne
