@@ -6,6 +6,7 @@ import dev.aditya.userauthservice.Model.Session;
 import dev.aditya.userauthservice.Model.TokenType;
 import dev.aditya.userauthservice.Model.User;
 import dev.aditya.userauthservice.Service.IUserAuthService;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,7 @@ public class UserAuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signupUser(@RequestBody SignupRequestDTO signupRequestDTO)
-                                                        throws UserAlreadyExistsException, DataFormatException {
+                                               throws UserAlreadyExistsException, DataFormatException {
 
         User newUser = userAuthService.signup(signupRequestDTO.getName(),signupRequestDTO.getEmail(),signupRequestDTO.getPassword(),
                                               signupRequestDTO.getDateOfBirth(),signupRequestDTO.getPhoneNumber(),
@@ -37,9 +38,10 @@ public class UserAuthController {
         return new ResponseEntity<>(newSignupResponseDTO,HttpStatus.CREATED);
     }
 
+
     @PostMapping("/login")
     public ResponseEntity<String> loginUser(@RequestBody LoginRequestDTO loginRequestDTO)
-                                                        throws UserNotFoundException, CredentialMismatchException {
+                                    throws UserNotFoundException, CredentialMismatchException {
         Session newSession = userAuthService.login(loginRequestDTO.getEmail(),loginRequestDTO.getPassword());
 
         HttpHeaders newHeader = buildHeaderForTokens(newSession.getAuthToken(),newSession.getRefreshToken(),1);
@@ -51,9 +53,10 @@ public class UserAuthController {
 
     }
 
+
     @PostMapping("/auth/logout")
     public ResponseEntity<String> logoutUser(@CookieValue(name = "refreshToken") String refreshToken)
-                                                throws UserNotFoundException, SessionNotExistException {
+                                     throws UserNotFoundException, SessionNotExistException {
 
         Session session = userAuthService.logout(refreshToken);
 
@@ -62,6 +65,7 @@ public class UserAuthController {
         return new ResponseEntity<>("GoodeBye "+session.getUser().getName()+"!! Hope to see you soon!",newHeader,HttpStatus.OK);
 
     }
+
 
     @PostMapping("/auth/refresh")
     public ResponseEntity<String> refreshToken(@CookieValue(name = "refreshToken") String refreshToken)
@@ -73,26 +77,55 @@ public class UserAuthController {
         return new ResponseEntity<>("Tokens have been generated please continue!",newHeader,HttpStatus.CREATED);
     }
 
+
     @GetMapping("/profile")
-    public ResponseEntity<ProfileResponseDTO> viewUserProfile(@PathVariable String userEmail ){
-
-        return null;
-
+    public ResponseEntity<ProfileResponseDTO> viewUserProfile(@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken)
+                                                throws UserNotFoundException, InvalidTokenException {
+        Claims claims = userAuthService.validateToken(authToken, TokenType.AUTH);
+        User existingUser = userAuthService.viewUserProfile(claims.getSubject());
+        ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO();
+        profileResponseDTO.convertToDtoFrom(existingUser);
+        return new ResponseEntity<>(profileResponseDTO,HttpStatus.OK);
     }
+
+
     @PutMapping("/profile")
-    public ResponseEntity<ProfileResponseDTO> updateUserProfile(@RequestBody ProfileRequestDTO profileRequestDTO){
+    public ResponseEntity<ProfileResponseDTO> updateUserProfile(@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
+                                                                @RequestBody ProfileRequestDTO profileRequestDTO)
+                                                throws InvalidTokenException, UserNotFoundException, DataFormatException
+    {
+        Claims claims = userAuthService.validateToken(authToken,TokenType.AUTH);
+        User newUser = userAuthService.updateUserProfile(claims.getSubject(), profileRequestDTO.getName()
+                                                         ,profileRequestDTO.getEmail(),profileRequestDTO.getDateOfBirth()
+                                                         ,profileRequestDTO.getPhoneNumber(),profileRequestDTO.getAddress()
+                                                         ,profileRequestDTO.getRole());
+        ProfileResponseDTO profileResponseDTO=new ProfileResponseDTO();
+        profileResponseDTO.convertToDtoFrom(newUser);
 
-        return null;
+        return new ResponseEntity<>(profileResponseDTO,HttpStatus.OK);
 
     }
-    @PostMapping("/reset")
-    public ResponseEntity<String> resetUserPassword(@RequestBody ResetPasswordRequestDTO resetPasswordRequestDTO){
 
-        return null;
+
+
+    @PutMapping("/reset")
+    public ResponseEntity<String> resetUserPassword(@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
+                                                    @RequestBody ResetPasswordRequestDTO resetPasswordRequestDTO)
+                                        throws InvalidTokenException, UserNotFoundException, DataFormatException, SessionNotExistException
+    {
+        Claims claims = userAuthService.validateToken(authToken,TokenType.AUTH);
+        userAuthService.resetPassword(authToken, resetPasswordRequestDTO.getEmail(), resetPasswordRequestDTO.getPassword());
+
+        HttpHeaders newHeader = buildHeaderForTokens("", "",0);
+        return new ResponseEntity<>("Your password has been reset! Please Login again!",newHeader,HttpStatus.OK);
 
     }
     
-    
+
+
+
+
+
     // Helper methods
 
     private HttpHeaders buildHeaderForTokens(String authToken, String refreshToken,long maxAgeDaysCount){

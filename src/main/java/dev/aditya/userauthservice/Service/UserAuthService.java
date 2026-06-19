@@ -45,14 +45,14 @@ public class UserAuthService implements IUserAuthService{
         {
             throw new UserAlreadyExistsException("Seems like Email: '"+email+"' has already registered. \n\nPlease log in using registered Email and Password\n OR \nuse another Email!!");
         }
-        User newUser = buildNewUserFromParams(name,email,password,dateOfBirth,phoneNumber,address,role);
+        User newUser = buildNewUserFromParams(name,email,password,true,dateOfBirth,phoneNumber,address,role);
         return userRepository.save(newUser);
     }
 
     @Override
     public Session login(String email, String password) throws UserNotFoundException, CredentialMismatchException {
 
-        User existingUser = validateUser(email);
+        User existingUser = validateUserIsEmpty(email);
 
         if (!bCryptPasswordEncoder.matches(password,existingUser.getPassword())) {
             throw new CredentialMismatchException("Wrong Email-Id or Password. Please try again!!");
@@ -72,23 +72,55 @@ public class UserAuthService implements IUserAuthService{
     public Session refresh(String refreshToken) throws SessionNotExistException, InvalidTokenException, UserNotFoundException {
         Claims claims = validateToken(refreshToken,TokenType.REFRESH);
         Session existingSession  = validateSession(refreshToken,TokenType.REFRESH);
-        Session newSession = buildNewSession(validateUser(claims.getSubject()));
+        Session newSession = buildNewSession(validateUserIsEmpty(claims.getSubject()));
         newSession.setId(existingSession.getId());
         return sessionRepository.save(newSession);
     }
+
+    @Override
+    public User viewUserProfile(String email) throws UserNotFoundException {
+        User existingUser = validateUserIsEmpty(email);
+        return existingUser;
+    }
+
+
+    @Override
+    public User updateUserProfile(String currentEmail, String name, String email, String dateOfBirth, String phoneNumber,
+                                  String address, String role) throws UserNotFoundException, DataFormatException {
+        User existinguser = validateUserIsEmpty(currentEmail);
+        User newUser = buildNewUserFromParams(name, email, existinguser.getPassword(),false, dateOfBirth, phoneNumber, address, role);
+        newUser.setId(existinguser.getId());
+        return userRepository.save(newUser);
+    }
+
+    @Override
+    public void resetPassword(String authToken, String email, String password) throws UserNotFoundException, DataFormatException, SessionNotExistException {
+        User existingUser = validateUserIsEmpty(email);
+        User newUser = buildNewUserFromParams(existingUser.getName(), existingUser.getEmail(), password,true
+                                             ,existingUser.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                             ,existingUser.getPhoneNumber(),existingUser.getAddress()
+                                             ,existingUser.getRoles().getFirst().getRoleName().toString());
+        userRepository.save(newUser);
+        Session existingSession = validateSession(authToken,TokenType.AUTH);
+        existingSession.setCurrentStatus(Status.DELETED);
+        sessionRepository.save(existingSession);
+
+    }
+
+
 
 
 
     //HELPER METHODS
 
     //helper method to create a new user from DTO parameters
-    private User buildNewUserFromParams(String name, String email, String password, String dateOfBirth,
+    private User buildNewUserFromParams(String name, String email, String password,Boolean encodePassword, String dateOfBirth,
                                          String phoneNumber, String address, String roleName) throws DataFormatException {
 
         User newUser = User.builder()
                         .setName(name)
                         .setEmail(email)
-                        .setPassword(bCryptPasswordEncoder.encode(password))
+                        .setPassword(encodePassword?bCryptPasswordEncoder.encode(password):password)
                         .setDateOfBirth(convertLocalDateFromString(dateOfBirth))
                         .setPhoneNumber(phoneNumber)
                         .setAddress(address)
@@ -156,10 +188,10 @@ public class UserAuthService implements IUserAuthService{
         }
 
     //Validation helper as Session table contains a reference for User object which will fail at runtime as Hibernate expects a validity check for nested objects
-    private User validateUser(String email) throws UserNotFoundException {
+    private User validateUserIsEmpty(String email) throws UserNotFoundException {
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if(optionalUser.isEmpty() || optionalUser.get().getCurrentStatus().equals(Status.DELETED)){
-            throw new UserNotFoundException("User with email:"+email+"not found or has been Banned! Please Signup first then continue!!");
+            throw new UserNotFoundException("User with email:"+email+" not found or has been Banned! Please Signup first then continue!!");
         }
         return optionalUser.get();
     }
@@ -174,19 +206,23 @@ public class UserAuthService implements IUserAuthService{
     }
 
     //Validates the incoming Token and returns a proper valid claim
-    private Claims validateToken(String token,TokenType tokenType) throws InvalidTokenException {
+    @Override
+    public Claims validateToken(String token,TokenType tokenType) throws InvalidTokenException {
         try{
-            Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
+            if (!token.startsWith("Bearer ")){
+                throw new InvalidTokenException("Token provided is Invalid. Please try again!");
+            }
+            String authToken = token.substring(7);
+            Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(authToken).getPayload();
             String email = claims.getSubject();
             if(claims.isEmpty() || email == null ){
                 throw new InvalidTokenException("Token provided is Invalid. Please try again!");
             }
 
-            Session session = validateSession(token, tokenType);
-            User user = validateUser(email);
+            validateSession(authToken, tokenType);
             return claims;
         }
-        catch(UserNotFoundException | SessionNotExistException e){
+        catch(SessionNotExistException e){
             throw new InvalidTokenException("Token provided is Invalid. Please try again!");
         }
     }
@@ -194,13 +230,13 @@ public class UserAuthService implements IUserAuthService{
     //validates the session by different token types
     private Session validateSession(String token, TokenType tokenType) throws SessionNotExistException {
         Optional<Session> existingSession;
-        if(tokenType.equals(TokenType.REFRESH)){
+        if(tokenType == TokenType.REFRESH){
             existingSession= sessionRepository.findByRefreshToken(token);
         }
         else{
              existingSession = sessionRepository.findByAuthToken(token);
         }
-        if(existingSession.isEmpty() || existingSession.get().getCurrentStatus().equals(Status.DELETED)){
+        if(existingSession.isEmpty() || existingSession.get().getCurrentStatus()== Status.DELETED){
             throw new SessionNotExistException("Session doesn't exist! Please Login again!!");
         }
         return existingSession.get();

@@ -20,12 +20,11 @@ public class SignupResponseDTO {
     private String message;
 
     //convert from User
-    public SignupResponseDTO convertToDtoFrom(User user){
+    public void convertToDtoFrom(User user){
         this.setName(user.getName());
         this.setEmail(user.getEmail());
         this.setRoles(convertRoles(user.getRoles()));
         this.setMessage("Hello "+name.toUpperCase()+ "! You have been successfully registered! Please login using registered Email '" + email +"' and Password!!");
-        return this;
     }
 
     //Helper for converting roles from Role class to String
