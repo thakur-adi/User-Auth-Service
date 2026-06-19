@@ -174,7 +174,7 @@ public class UserAuthService implements IUserAuthService{
     }
 
     //Validates the incoming Token and returns a proper valid claim
-    private Claims validateToken(String token,TokenType tokenType) throws InvalidTokenException, SessionNotExistException {
+    private Claims validateToken(String token,TokenType tokenType) throws InvalidTokenException {
         try{
             Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
             String email = claims.getSubject();
