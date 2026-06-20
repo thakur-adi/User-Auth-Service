@@ -108,16 +108,17 @@ public class UserAuthController {
 
 
 
-    @PutMapping("/reset")
-    public ResponseEntity<String> resetUserPassword(@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
+    @PutMapping("/auth/reset")
+    public ResponseEntity<String> resetUserPassword(@CookieValue(name = "refreshToken") String refreshToken,
+                                                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
                                                     @RequestBody ResetPasswordRequestDTO resetPasswordRequestDTO)
                                         throws InvalidTokenException, UserNotFoundException, DataFormatException, SessionNotExistException
     {
         Claims claims = userAuthService.validateToken(authToken,TokenType.AUTH);
-        userAuthService.resetPassword(authToken, resetPasswordRequestDTO.getEmail(), resetPasswordRequestDTO.getPassword());
+        Session session = userAuthService.resetPassword(refreshToken, resetPasswordRequestDTO.getEmail(), resetPasswordRequestDTO.getPassword());
 
         HttpHeaders newHeader = buildHeaderForTokens("", "",0);
-        return new ResponseEntity<>("Your password has been reset! Please Login again!",newHeader,HttpStatus.OK);
+        return new ResponseEntity<>("Your password has been reset "+session.getUser().getName()+"! Please Login again!",newHeader,HttpStatus.OK);
 
     }
     

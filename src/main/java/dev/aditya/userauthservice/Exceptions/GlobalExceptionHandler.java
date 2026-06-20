@@ -15,12 +15,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<String> handleNullPointerException(NullPointerException e){
-        return new ResponseEntity<>("Unkown issue encountered. Please Try again later!",HttpStatus.SERVICE_UNAVAILABLE);
+        return new ResponseEntity<>("Unknown issue encountered. Please Try again later!",HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(DataFormatException.class)
     public ResponseEntity<String> handleDateFormatException(DataFormatException e){
-        return new ResponseEntity<>("Unkown issue encountered. Please Try again later!",HttpStatus.SERVICE_UNAVAILABLE);
+        return new ResponseEntity<>("Unknown issue encountered. Please Try again later!",HttpStatus.SERVICE_UNAVAILABLE);
     }
     @ExceptionHandler(MissingRequestCookieException.class)
     public ResponseEntity<String> handleMissingRequestCookieException(MissingRequestCookieException e)
@@ -47,6 +47,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<String> handleInvalidTokenException(InvalidTokenException e){
+        return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(CredentialMismatchException.class)
+    public ResponseEntity<String> handleCredentialsMismatchException(CredentialMismatchException e)
+    {
         return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
     }
 
