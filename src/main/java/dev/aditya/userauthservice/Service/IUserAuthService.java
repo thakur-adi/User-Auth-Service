@@ -24,6 +24,6 @@ public interface IUserAuthService {
 
     User updateUserProfile(String currentEmail, String name, String email, String dateOfBirth, String phoneNumber, String address, String role) throws UserNotFoundException, DataFormatException;
 
-    Session resetPassword(String authToken,String email,String password) throws UserNotFoundException, DataFormatException, SessionNotExistException;
+    User resetPassword(String email,String password) throws UserNotFoundException, DataFormatException, SessionNotExistException;
 
 }

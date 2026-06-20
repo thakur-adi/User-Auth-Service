@@ -44,7 +44,7 @@ public class UserAuthController {
                                     throws UserNotFoundException, CredentialMismatchException {
         Session newSession = userAuthService.login(loginRequestDTO.getEmail(),loginRequestDTO.getPassword());
 
-        HttpHeaders newHeader = buildHeaderForTokens(newSession.getAuthToken(),newSession.getRefreshToken(),1);
+        HttpHeaders newHeader = buildHeaderFromTokens(newSession.getAuthToken(),newSession.getRefreshToken(),1);
 
         /*LoginResponseDTO loginResponseDTO = new LoginResponseDTO();
         loginResponseDTO.convertToDtoFromSession(newSession);*/
@@ -60,7 +60,7 @@ public class UserAuthController {
 
         Session session = userAuthService.logout(refreshToken);
 
-        HttpHeaders newHeader = buildHeaderForTokens("", "",0);
+        HttpHeaders newHeader = buildHeaderFromTokens("", "",0);
 
         return new ResponseEntity<>("GoodeBye "+session.getUser().getName()+"!! Hope to see you soon!",newHeader,HttpStatus.OK);
 
@@ -71,7 +71,7 @@ public class UserAuthController {
     public ResponseEntity<String> refreshToken(@CookieValue(name = "refreshToken") String refreshToken)
                                     throws SessionNotExistException, InvalidTokenException, UserNotFoundException {
         Session session = userAuthService.refresh(refreshToken);
-        HttpHeaders newHeader = buildHeaderForTokens(session.getAuthToken(),session.getRefreshToken(),1);
+        HttpHeaders newHeader = buildHeaderFromTokens(session.getAuthToken(),session.getRefreshToken(),1);
 //        RefreshTokenDTO refreshTokenDTO = new RefreshTokenDTO();
 //        refreshTokenDTO.convertToDtoFrom(session);
         return new ResponseEntity<>("Tokens have been generated please continue!",newHeader,HttpStatus.CREATED);
@@ -108,20 +108,17 @@ public class UserAuthController {
 
 
 
-    @PutMapping("/auth/reset")
-    public ResponseEntity<String> resetUserPassword(@CookieValue(name = "refreshToken") String refreshToken,
-                                                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
+    @PutMapping("/reset")
+    public ResponseEntity<String> resetUserPassword(@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
                                                     @RequestBody ResetPasswordRequestDTO resetPasswordRequestDTO)
-                                        throws InvalidTokenException, UserNotFoundException, DataFormatException, SessionNotExistException
+                                    throws InvalidTokenException, UserNotFoundException, DataFormatException, SessionNotExistException
     {
         Claims claims = userAuthService.validateToken(authToken,TokenType.AUTH);
-        Session session = userAuthService.resetPassword(refreshToken, resetPasswordRequestDTO.getEmail(), resetPasswordRequestDTO.getPassword());
+        User newUser = userAuthService.resetPassword(resetPasswordRequestDTO.getEmail(), resetPasswordRequestDTO.getPassword());
 
-        HttpHeaders newHeader = buildHeaderForTokens("", "",0);
-        return new ResponseEntity<>("Your password has been reset "+session.getUser().getName()+"! Please Login again!",newHeader,HttpStatus.OK);
-
+        HttpHeaders newHeader = buildHeaderFromTokens("", "",0);
+        return new ResponseEntity<>("Your password has been reset "+newUser.getName()+"! Please Login again!",newHeader,HttpStatus.OK);
     }
-    
 
 
 
@@ -129,7 +126,7 @@ public class UserAuthController {
 
     // Helper methods
 
-    private HttpHeaders buildHeaderForTokens(String authToken, String refreshToken,long maxAgeDaysCount){
+    private HttpHeaders buildHeaderFromTokens(String authToken, String refreshToken,long maxAgeDaysCount){
 
         //String nameOfCookie = (tokenType==TokenType.REFRESH)?"refreshToken":"authToken";
 

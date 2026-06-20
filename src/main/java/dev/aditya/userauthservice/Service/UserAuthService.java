@@ -94,7 +94,7 @@ public class UserAuthService implements IUserAuthService{
     }
 
     @Override
-    public Session resetPassword(String refreshToken, String email, String password) throws UserNotFoundException, DataFormatException, SessionNotExistException {
+    public User resetPassword(String email, String password) throws UserNotFoundException, DataFormatException, SessionNotExistException {
         User existingUser = validateUserIsEmpty(email);
         User newUser = buildNewUserFromParams(existingUser.getName(), existingUser.getEmail(), password,true
                                              ,existingUser.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
@@ -102,7 +102,12 @@ public class UserAuthService implements IUserAuthService{
                                              ,existingUser.getRoles().getFirst().getRoleName().toString());
         newUser.setId(existingUser.getId());
         userRepository.save(newUser);
-        return logout(refreshToken);
+        List<Session> activeSessions = sessionRepository.findAllByUserAndCurrentStatus(existingUser,Status.ACTIVE);
+        for(Session session: activeSessions){
+            session.setCurrentStatus(Status.DELETED);
+            sessionRepository.save(session);
+        }
+        return newUser;
     }
 
 

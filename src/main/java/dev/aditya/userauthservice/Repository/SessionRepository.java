@@ -1,10 +1,12 @@
 package dev.aditya.userauthservice.Repository;
 
 import dev.aditya.userauthservice.Model.Session;
+import dev.aditya.userauthservice.Model.Status;
 import dev.aditya.userauthservice.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,7 +16,7 @@ public interface SessionRepository extends JpaRepository<Session,Long> {
 
     Optional<Session> findByAuthToken(String authToken);
 
-    Optional<Session> findByUser(User user);
+    List<Session> findAllByUserAndCurrentStatus(User user, Status currentStatus);
 
     Session save(Session session);
 }
