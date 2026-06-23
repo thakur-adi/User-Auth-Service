@@ -7,23 +7,7 @@ import dev.aditya.userauthservice.Model.TokenType;
 
 import java.util.Optional;
 
-//public class ServiceValidator {
-//
-//    public void  validate() {
-//        return null;
-//    }
-//
-//    private Session validateSession(String token, TokenType tokenType) throws SessionNotExistException {
-//        Optional<Session> existingSession;
-//        if(tokenType == TokenType.REFRESH){
-//            existingSession= sessionRepository.findByRefreshToken(token);
-//        }
-//        else{
-//            existingSession = sessionRepository.findByAuthToken(token);
-//        }
-//        if(existingSession.isEmpty() || existingSession.get().getCurrentStatus()== Status.DELETED){
-//            throw new SessionNotExistException("Session doesn't exist! Please Login again!!");
-//        }
-//        return existingSession.get();
-//    }
-//}
+public class ServiceValidator {
+
+    }
+
