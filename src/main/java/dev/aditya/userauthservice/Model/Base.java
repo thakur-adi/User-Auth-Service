@@ -16,7 +16,8 @@ import java.util.Date;
 public abstract class Base {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@GeneratedValue -> only 1 allowed per class
+    @GeneratedValue(strategy = GenerationType.IDENTITY) //JPA creates this ID at insert operation i.e. save() -> uses DB to create an Id for the object
     private Long id;
 
     @CreatedDate //tells Spring Data JPA to automatically populate this var with the current system timestamp, the exact moment the record is inserted into the database.

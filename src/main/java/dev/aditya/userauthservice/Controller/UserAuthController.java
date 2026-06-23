@@ -3,7 +3,6 @@ package dev.aditya.userauthservice.Controller;
 import dev.aditya.userauthservice.Dto.*;
 import dev.aditya.userauthservice.Exceptions.*;
 import dev.aditya.userauthservice.Model.Session;
-import dev.aditya.userauthservice.Model.TokenType;
 import dev.aditya.userauthservice.Model.User;
 import dev.aditya.userauthservice.Service.IUserAuthService;
 import io.jsonwebtoken.Claims;
@@ -16,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
 import java.util.zip.DataFormatException;
 
 @RestController
@@ -56,33 +56,40 @@ public class UserAuthController {
 
 
     @PostMapping("/auth/logout")
-    public ResponseEntity<String> logoutUser(@CookieValue(name = "refreshToken") String refreshToken)
-                                     throws UserNotFoundException, SessionNotExistException
+    public ResponseEntity<String> logoutUser() throws UserNotFoundException, SessionNotExistException
+        /*public ResponseEntity<String> logoutUser(@CookieValue(name = "refreshToken") String refreshToken)
+        * Used earlier before moving to central/filter based authentication*/
     {
+        Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Session session = userAuthService.logout(UUID.fromString(claims.getId()));
 
-        Session session = userAuthService.logout(refreshToken);
-
-        HttpHeaders newHeader = buildHeaderFromCookies("", "",0);
+        HttpHeaders newHeader = buildHeaderFromCookies("refreshToken", "",0);
         newHeader.setBearerAuth("");
+
         return new ResponseEntity<>("GoodeBye "+session.getUser().getName()+"!! Hope to see you soon!",newHeader,HttpStatus.OK);
 
     }
 
 
     @PostMapping("/auth/refresh")
-    public ResponseEntity<String> refreshToken(@CookieValue(name = "refreshToken") String refreshToken)
-                                    throws SessionNotExistException, InvalidTokenException, UserNotFoundException
+    public ResponseEntity<String> refreshToken()  throws SessionNotExistException, InvalidTokenException, UserNotFoundException
+        /* public ResponseEntity<String> refreshToken(@CookieValue(name = "refreshToken") String refreshToken)
+        used earlier before moving to central/filter based authentication*/
     {
-        Session session = userAuthService.refresh(refreshToken);
+        Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Session session = userAuthService.refresh(UUID.fromString(claims.getId()));
+
         HttpHeaders newHeader = buildHeaderFromCookies("refreshToken",session.getRefreshToken(),1*24*60*60);
         newHeader.setBearerAuth(session.getAuthToken());
+
         return new ResponseEntity<>("Tokens have been generated please continue!",newHeader,HttpStatus.CREATED);
     }
 
 
     @GetMapping("/profile")
-    public ResponseEntity<ProfileResponseDTO> viewUserProfile()//@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken)
-                                                throws UserNotFoundException, InvalidTokenException
+    public ResponseEntity<ProfileResponseDTO> viewUserProfile() throws UserNotFoundException
+        /*@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken)
+        * */
     {
         Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();//userAuthService.validateToken(authToken, TokenType.AUTH);
         User existingUser = userAuthService.viewUserProfile(claims.getSubject());
@@ -93,11 +100,10 @@ public class UserAuthController {
 
 
     @PutMapping("/profile")
-    public ResponseEntity<ProfileResponseDTO> updateUserProfile(//@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
-                                                                @RequestBody ProfileUpdateRequestDTO profileUpdateRequestDTO)
-                                                throws InvalidTokenException, UserNotFoundException, DataFormatException
+    public ResponseEntity<ProfileResponseDTO> updateUserProfile(@RequestBody ProfileUpdateRequestDTO profileUpdateRequestDTO)
+                                                throws UserNotFoundException, DataFormatException
     {
-        Claims claims =(Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();// userAuthService.validateToken(authToken,TokenType.AUTH);
+        Claims claims =(Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal(); //userAuthService.validateToken(authToken,TokenType.AUTH);
         User newUser = userAuthService.updateUserProfile(claims.getSubject(), profileUpdateRequestDTO.getName()
                                                          , profileUpdateRequestDTO.getEmail(), profileUpdateRequestDTO.getDateOfBirth()
                                                          , profileUpdateRequestDTO.getPhoneNumber(), profileUpdateRequestDTO.getAddress()
@@ -112,14 +118,13 @@ public class UserAuthController {
 
 
     @PutMapping("/reset")
-    public ResponseEntity<String> resetUserPassword(@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken,
-                                                    @RequestBody ResetPasswordRequestDTO resetPasswordRequestDTO)
-                                    throws InvalidTokenException, UserNotFoundException, DataFormatException, SessionNotExistException
+    public ResponseEntity<String> resetUserPassword(@RequestBody ResetPasswordRequestDTO resetPasswordRequestDTO)
+                                    throws UserNotFoundException, DataFormatException, SessionNotExistException
     {
         Claims claims =  (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();//userAuthService.validateToken(authToken,TokenType.AUTH);
         User newUser = userAuthService.resetPassword(claims.getSubject(), resetPasswordRequestDTO.getPassword());
 
-        HttpHeaders newHeader = buildHeaderFromCookies( "","",0);
+        HttpHeaders newHeader = buildHeaderFromCookies( "refreshToken","",0);
         newHeader.setBearerAuth("");
         return new ResponseEntity<>("Your password has been reset "+newUser.getName()+"! Please Login again!",newHeader,HttpStatus.OK);
     }
@@ -132,7 +137,6 @@ public class UserAuthController {
 
     private HttpHeaders buildHeaderFromCookies(String cookieName, String cookieTokenValue,long cookieExpiryAge)
     {
-
         ResponseCookie responseCookie = ResponseCookie.from(cookieName,cookieTokenValue)
                                                       .httpOnly(Boolean.TRUE)
                                                       .secure(Boolean.TRUE)
@@ -145,5 +149,4 @@ public class UserAuthController {
         httpHeaders.add(HttpHeaders.SET_COOKIE,responseCookie.toString());
         return httpHeaders;
     }
-
 }

@@ -46,8 +46,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = "";
         try {
             String servletPath = request.getServletPath();
+    //Don't use if condition as login or signup will have to pass through it. We'll have to add a check for them as well.(1.refresh_based,2.Auth_based,3.All_other)
+
             //check for refresh expecting endpoints
-        //Don't use if condition as login or signup will have to pass through it. We'll have to add a check for them as well.(1.refresh_based,2.Auth_based,3.All_other)
                 for (String endpoint : REFRESH_BASED_ENDPOINTS) {
                     if (servletPath.equals(endpoint)) {
                         //Extracting Tokens
@@ -88,7 +89,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void saveSecurityContextFromClaims(Claims claims){
-        //This (UsernamePasswordAuthenticationToken) is by default suggested to use by SPRING. There are others as well with different use case but most commonly this gets used for authentication
+        //This (UsernamePasswordAuthenticationToken) is by default used by devs in industry.
+        // There are others as well with different use case but most commonly this gets used for custom filters like JWTFilter etc. even tho it doesn't have username and password.
+        //Why? Because it's a convenient built-in implementation that already stores: Principal,Credentials,Authorities,Authenticated status. Spring Security understands it perfectly.
+        //We can create our own as well -> public class CustomJwtAuthenticationToken implements Authentication {...} ---- (JwtAuthenticationToken ->already exists for OAUTH2)
         UsernamePasswordAuthenticationToken authenticationToken =
                 UsernamePasswordAuthenticationToken.authenticated(claims, claims.getSubject(), null);
 

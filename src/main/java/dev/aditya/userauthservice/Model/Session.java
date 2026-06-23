@@ -1,11 +1,10 @@
 package dev.aditya.userauthservice.Model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,6 +17,9 @@ public class Session extends Base{
     @Lob//(Large Object) tells Hibernate that this field should map to a long text type (like TEXT or LONGTEXT) instead of a standard VARCHAR
     private String authToken;
     private String refreshToken;
+    //can't use this cause @GeneratedValue is intended for the entity identifier, i.e. the field marked with @Id
+    // @GeneratedValue(strategy = GenerationType.UUID) --> JPA creates ID on object creation not dependent on DB, so It's available before insert i.e. save()
+    private UUID refreshTokenId;
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
