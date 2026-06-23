@@ -10,7 +10,6 @@ import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
 import java.time.LocalDate;
@@ -63,16 +62,16 @@ public class UserAuthService implements IUserAuthService{
 
     @Override
     public Session logout(String refreshToken) throws SessionNotExistException {
-        Session existingSession = validateSession(refreshToken,TokenType.REFRESH);
+        Session existingSession = sessionRepository.findByRefreshToken(refreshToken).get();//validateSession(refreshToken,TokenType.REFRESH);
         existingSession.setCurrentStatus(Status.DELETED);
         return sessionRepository.save(existingSession);
     }
 
     @Override
     public Session refresh(String refreshToken) throws SessionNotExistException, InvalidTokenException, UserNotFoundException {
-        Claims claims = validateToken(refreshToken,TokenType.REFRESH);
-        Session existingSession  = validateSession(refreshToken,TokenType.REFRESH);
-        Session newSession = buildNewSession(validateUserIsEmpty(claims.getSubject()));
+        //Claims claims = validateToken(refreshToken,TokenType.REFRESH);
+        Session existingSession  = sessionRepository.findByRefreshToken(refreshToken).get();//validateSession(refreshToken,TokenType.REFRESH);
+        Session newSession = buildNewSession(existingSession.getUser());//claims.getSubject()));
         newSession.setId(existingSession.getId());
         return sessionRepository.save(newSession);
     }
@@ -153,6 +152,16 @@ public class UserAuthService implements IUserAuthService{
         return dob;
     }
 
+
+    //helper method for creation of a new session on every login,refresh
+    private Session buildNewSession(User existingUser){
+        Session session = new Session();
+        session.setAuthToken(generateJWT(TokenType.AUTH,existingUser));
+        session.setRefreshToken(generateJWT(TokenType.REFRESH, existingUser));
+        session.setUser(existingUser);
+        return session;
+    }
+
     //helper for creating a JWT based on Token type
     private String generateJWT(TokenType tokenType, User user){
         Date today = new Date();
@@ -169,8 +178,8 @@ public class UserAuthService implements IUserAuthService{
                             .claim("Name: ",user.getName())
                             .claim("Email:",user.getEmail())
                             .claim("Roles: ",user.getRoles().toString())
-                            .issuer("Ecommerce.com")
-                            .issuedAt(new Date())
+                            .issuer("Amazon-Copy.com")
+                            .issuedAt(today)
                             .expiration(expiryDate)
                             .signWith(secretKey)
                             .compact();
@@ -199,36 +208,28 @@ public class UserAuthService implements IUserAuthService{
         return optionalUser.get();
     }
 
-    //helper method for creation of a new session on every login,refresh
-    private Session buildNewSession(User existingUser){
-        Session session = new Session();
-        session.setAuthToken(generateJWT(TokenType.AUTH,existingUser));
-        session.setRefreshToken(generateJWT(TokenType.REFRESH, existingUser));
-        session.setUser(existingUser);
-        return session;
-    }
 
-    //Validates the incoming Token and returns a proper valid claim
-    @Override
-    public Claims validateToken(String token,TokenType tokenType) throws InvalidTokenException {
-        try{
-            if (!token.startsWith("Bearer ")){
-                throw new InvalidTokenException("Token provided is Invalid. Please try again!");
-            }
-            String authToken = token.substring(7);
-            Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(authToken).getPayload();
-            String email = claims.getSubject();
-            if(claims.isEmpty() || email == null ){
-                throw new InvalidTokenException("Token provided is Invalid. Please try again!");
-            }
-
-            validateSession(authToken, tokenType);
-            return claims;
-        }
-        catch(SessionNotExistException e){
-            throw new InvalidTokenException("Token provided is Invalid. Please try again!");
-        }
-    }
+//    //Validates the incoming Token and returns a proper valid claim
+//    @Override
+//    public Claims validateToken(String token,TokenType tokenType) throws InvalidTokenException {
+//        try{
+//            if (!token.startsWith("Bearer ")){
+//                throw new InvalidTokenException("Token provided is Invalid. Please try again!");
+//            }
+//            String authToken = token.substring(7);
+//            Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(authToken).getPayload();
+//            String email = claims.getSubject();
+//            if(claims.isEmpty() || email == null ){
+//                throw new InvalidTokenException("Token provided is Invalid. Please try again!");
+//            }
+//
+//            validateSession(authToken, tokenType);
+//            return claims;
+//        }
+//        catch(SessionNotExistException e){
+//            throw new InvalidTokenException("Token provided is Invalid. Please try again!");
+//        }
+//    }
 
     //validates the session by different token types
     private Session validateSession(String token, TokenType tokenType) throws SessionNotExistException {
@@ -239,7 +240,7 @@ public class UserAuthService implements IUserAuthService{
         else{
              existingSession = sessionRepository.findByAuthToken(token);
         }
-        if(existingSession.isEmpty() || existingSession.get().getCurrentStatus()== Status.DELETED){
+        if(existingSession.isEmpty() ){//|| existingSession.get().getCurrentStatus()== Status.DELETED){
             throw new SessionNotExistException("Session doesn't exist! Please Login again!!");
         }
         return existingSession.get();

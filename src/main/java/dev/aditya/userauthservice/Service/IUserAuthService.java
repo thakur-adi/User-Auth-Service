@@ -20,7 +20,7 @@ public interface IUserAuthService {
 
     User viewUserProfile(String email) throws UserNotFoundException;
 
-    Claims validateToken(String token, TokenType tokenType) throws InvalidTokenException;
+   // Claims validateToken(String token, TokenType tokenType) throws InvalidTokenException;
 
     User updateUserProfile(String currentEmail, String name, String email, String dateOfBirth, String phoneNumber, String address, String role) throws UserNotFoundException, DataFormatException;
 

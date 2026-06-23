@@ -1,5 +1,7 @@
 package dev.aditya.userauthservice.Exceptions;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingRequestCookieException;
@@ -26,6 +28,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleMissingRequestCookieException(MissingRequestCookieException e)
     {
         return new ResponseEntity<>("Cookies are missing! Please login again you have been logged out!!",HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<String> handleExpiredJwtException(ExpiredJwtException e){
+        return new ResponseEntity<>("Token has expired! Please Login again!!",HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<String> handleJwtException(JwtException e){
+        return new ResponseEntity<>("Invalid Token! Please try again!",HttpStatus.UNAUTHORIZED);
     }
 
 
