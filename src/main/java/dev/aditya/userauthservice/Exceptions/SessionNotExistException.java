@@ -1,6 +1,8 @@
 package dev.aditya.userauthservice.Exceptions;
 
-public class SessionNotExistException extends Exception{
+import org.springframework.security.core.AuthenticationException;
+
+public class SessionNotExistException extends AuthenticationException {
 
     public static String defaultMessage = "Session is invalid. It doesn't Exist anymore";
 

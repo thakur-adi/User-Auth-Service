@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     {
         return new ResponseEntity<>("Cookies are missing! Please login again you have been logged out!!",HttpStatus.BAD_REQUEST);
     }
-
+/*
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<String> handleExpiredJwtException(ExpiredJwtException e){
         return new ResponseEntity<>("Token has expired! Please Login again!!",HttpStatus.UNAUTHORIZED);
@@ -39,13 +39,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleJwtException(JwtException e){
         return new ResponseEntity<>("Invalid Token! Please try again!",HttpStatus.UNAUTHORIZED);
     }
-
+*/
 
     //For custom defined Exceptions
-    @ExceptionHandler(SessionNotExistException.class)
-    public ResponseEntity<String> handleSessionNotExistException(SessionNotExistException e){
-        return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-    }
 
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException e){
@@ -57,15 +53,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<String> handleInvalidTokenException(InvalidTokenException e){
-        return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
-    }
-
     @ExceptionHandler(CredentialMismatchException.class)
     public ResponseEntity<String> handleCredentialsMismatchException(CredentialMismatchException e)
     {
         return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
     }
 
+    /*
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<String> handleInvalidTokenException(InvalidTokenException e){
+        return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(SessionNotExistException.class)
+    public ResponseEntity<String> handleSessionNotExistException(SessionNotExistException e){
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+    }
+    */
 }
