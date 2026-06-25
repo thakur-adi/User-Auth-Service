@@ -102,7 +102,8 @@ LOGIN
   └──▶ Persist both tokens in DB
 ```
 
-<img width="2720" height="2080" alt="login_signup_flow" src="https://github.com/user-attachments/assets/af1845fb-7e77-4000-a9bb-32a18934bcd5" />
+<img width="1356" height="1038" alt="image" src="https://github.com/user-attachments/assets/b64a9cae-5adb-40bf-bab6-32243fea8390" />
+
 
 ```
 AUTHENTICATED REQUEST
@@ -112,7 +113,8 @@ AUTHENTICATED REQUEST
   └──▶ Loads user claims into SecurityContext
 ```
 
-<img width="2720" height="2080" alt="login_signup_flow" src="https://github.com/user-attachments/assets/6420d126-c325-49fb-9623-80c2261f5b41" />
+<img width="1356" height="1038" alt="image" src="https://github.com/user-attachments/assets/1a8e35b0-34a0-45ad-ae91-ae6b475ed35c" />
+
 
 ```
 REFRESH
