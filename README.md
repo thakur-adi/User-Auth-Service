@@ -102,28 +102,21 @@ LOGIN
   └──▶ Persist both tokens in DB
 ```
 
-<img width="1356" height="1038" alt="image" src="https://github.com/user-attachments/assets/b64a9cae-5adb-40bf-bab6-32243fea8390" />
-
 
 ```
-AUTHENTICATED REQUEST
+AUTHENTICATED REQUEST (/profile,/reset)
   └──▶ Filter extracts Access Token from Authorization header
-  └──▶ Validates JWT signature + expiry
-  └──▶ Checks token exists in DB and is not soft-deleted
+  └──▶ Validates JWT signature + expiry + Checks token exists in DB and is not soft-deleted
   └──▶ Loads user claims into SecurityContext
 ```
-
-<img width="1356" height="1038" alt="image" src="https://github.com/user-attachments/assets/1a8e35b0-34a0-45ad-ae91-ae6b475ed35c" />
 
 
 ```
 REFRESH
-  └──▶ Validate Refresh Token from cookie
+  └──▶ Validate Refresh Token from cookie + Checks token exists in DB and is not soft-deleted
   └──▶ Overwrite both tokens in DB with new pair
   └──▶ Return new Access Token + new Refresh Token cookie
 ```
-
-<img width="1356" height="998" alt="image" src="https://github.com/user-attachments/assets/8451dc77-fb6b-4607-95d7-68f9ee5ff6f8" />
 
 ```
 LOGOUT
@@ -136,9 +129,6 @@ PASSWORD RESET
   └──▶ Update password (BCrypt)
   └──▶ Soft-delete ALL tokens for the user (logout from every device)
 ```
-
-<img width="1356" height="1078" alt="image" src="https://github.com/user-attachments/assets/c6211ee8-41f7-4d07-8a16-739e693fd4d6" />
-
 
 ---
 
@@ -203,10 +193,9 @@ export JWT_SECRET=your_secret_key
 
 ## Known Gaps & Roadmap
 
-- [ ] Refresh token rotation with family-based revocation (RFC 6819)
-- [ ] Rate limiting on `/auth/login` and `/auth/signup` (Bucket4j)
-- [ ] Account lockout after N failed login attempts
-- [ ] Email verification on signup
-- [ ] Structured audit logging (login events, failures, IP tracking)
+-  Rate limiting on **/auth/login** and **/auth/signup**
+-  Account lockout after N failed login attempts
+-  Email verification on signup
+-  Structured audit logging (login events, failures, IP tracking)
 
 ---
