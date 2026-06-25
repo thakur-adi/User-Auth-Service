@@ -20,7 +20,7 @@ public class User extends Base{
     @Getter
     private String password;
     @Getter
-    private LocalDate dateOfBirth; //Date is a legacy system. 'LocalDate' brings many benefits over 'Date' like no "Time Zone Shift",thread safety etc.
+    private LocalDate dateOfBirth; //Date is a legacy system. 'LocalDate' provides a robust way to represent dates without time or timezone information, thread safety etc.
     @Getter
     private String phoneNumber;
     @Getter

@@ -5,6 +5,7 @@ import dev.aditya.userauthservice.Model.*;
 import dev.aditya.userauthservice.Repository.RoleRepository;
 import dev.aditya.userauthservice.Repository.SessionRepository;
 import dev.aditya.userauthservice.Repository.UserRepository;
+import dev.aditya.userauthservice.Validation.ServiceValidator;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,27 +35,27 @@ public class UserAuthService implements IUserAuthService {
     @Autowired
     private SecretKey secretKey;
 
+    @Autowired
+    private ServiceValidator serviceValidator;
+
 
     @Override
     public User signup(String name, String email, String password, String dateOfBirth, String phoneNumber,
                        String address, String role) throws UserAlreadyExistsException, DataFormatException {
 
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new UserAlreadyExistsException("Seems like Email: '" + email + "' has already registered. \n\nPlease log in using registered Email and Password\n OR \nuse another Email!!");
-        }
-        User newUser = buildNewUserFromParams(name, email, password, true, dateOfBirth, phoneNumber, address, role);
+        serviceValidator.validateNewUser(email);
+        User newUser = buildNewUserFromParams(name, email, password, true,
+                                              convertLocalDateFromString(dateOfBirth),phoneNumber, address, role);
         return userRepository.save(newUser);
     }
 
     @Override
     public Session login(String email, String password) throws UserNotFoundException, CredentialMismatchException {
 
-        User existingUser = validateUserIsEmpty(email);
-
-        if (!bCryptPasswordEncoder.matches(password, existingUser.getPassword())) {
-            throw new CredentialMismatchException("Wrong Email-Id or Password. Please try again!!");
-        }
+        User existingUser = serviceValidator.validateExistingUser(email);
+        serviceValidator.validateUserPassword(password,existingUser);
         Session newSession = buildNewSession(existingUser);
+
         return sessionRepository.save(newSession);
     }
 
@@ -76,7 +77,7 @@ public class UserAuthService implements IUserAuthService {
 
     @Override
     public User viewUserProfile(String email) throws UserNotFoundException {
-        User existingUser = validateUserIsEmpty(email);
+        User existingUser = serviceValidator.validateExistingUser(email);
         return existingUser;
     }
 
@@ -84,19 +85,22 @@ public class UserAuthService implements IUserAuthService {
     @Override
     public User updateUserProfile(String currentEmail, String name, String email, String dateOfBirth, String phoneNumber,
                                   String address, String role) throws UserNotFoundException, DataFormatException {
-        User existinguser = validateUserIsEmpty(currentEmail);
-        User newUser = buildNewUserFromParams(name, email, existinguser.getPassword(), false, dateOfBirth, phoneNumber, address, role);
+
+        User existinguser = serviceValidator.validateExistingUser(currentEmail);
+        User newUser = buildNewUserFromParams(name, email, existinguser.getPassword(),
+                                false, convertLocalDateFromString(dateOfBirth),phoneNumber,address,role);
         newUser.setId(existinguser.getId());
+
         return userRepository.save(newUser);
     }
 
     @Override
     public User resetPassword(String email, String password) throws UserNotFoundException, DataFormatException {
-        User existingUser = validateUserIsEmpty(email);
+        User existingUser = serviceValidator.validateExistingUser(email);
         User newUser = buildNewUserFromParams(existingUser.getName(), existingUser.getEmail(), password, true
-                , existingUser.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                , existingUser.getPhoneNumber(), existingUser.getAddress()
-                , existingUser.getRoles().getFirst().getRoleName().toString());
+                                              ,existingUser.getDateOfBirth()
+                                              ,existingUser.getPhoneNumber(), existingUser.getAddress()
+                                              ,existingUser.getRoles().getFirst().getRoleName().toString());
         newUser.setId(existingUser.getId());
         userRepository.save(newUser);
         List<Session> activeSessions = sessionRepository.findAllByUserAndCurrentStatus(existingUser, Status.ACTIVE);
@@ -111,14 +115,14 @@ public class UserAuthService implements IUserAuthService {
     //HELPER METHODS
 
     //helper method to create a new user from DTO parameters
-    private User buildNewUserFromParams(String name, String email, String password, Boolean encodePassword, String dateOfBirth,
+    private User buildNewUserFromParams(String name, String email, String password, Boolean encodePassword, LocalDate dateOfBirth,
                                         String phoneNumber, String address, String roleName) throws DataFormatException {
 
         User newUser = User.builder()
                 .setName(name)
                 .setEmail(email)
                 .setPassword(encodePassword ? bCryptPasswordEncoder.encode(password) : password)
-                .setDateOfBirth(convertLocalDateFromString(dateOfBirth))
+                .setDateOfBirth(dateOfBirth)
                 .setPhoneNumber(phoneNumber)
                 .setAddress(address)
                 .addRoles(getRoleFromDB(roleName))
@@ -137,16 +141,15 @@ public class UserAuthService implements IUserAuthService {
         return roleRepository.save(newRole);
     }
 
-
     //helper function to create a local date from string
-    private LocalDate convertLocalDateFromString(String dateOfBirth) throws DataFormatException {
-        if (dateOfBirth.length() > 10) {
-            throw new DataFormatException("Invalid Date. Please enter proper Date and try again!");
-        }
+    private LocalDate convertLocalDateFromString(String dateOfBirth) {
+//        if (dateOfBirth.length() > 10) {
+//            throw new DataFormatException("Invalid Date. Please enter proper Date and try again!");
+//        } this is not required as the parser function below checks for everything and will throw DateTimeParseException
+        dateOfBirth = dateOfBirth.replace(" ","");
         LocalDate dob = LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         return dob;
     }
-
 
     //helper method for creation of a new session on every login,refresh
     private Session buildNewSession(User user) {
@@ -192,15 +195,6 @@ public class UserAuthService implements IUserAuthService {
 
         }
         return token;
-    }
-
-    //Validation helper as Session table contains a reference for User object which will fail at runtime as Hibernate expects a validity check for nested objects
-    private User validateUserIsEmpty(String email) throws UserNotFoundException {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isEmpty() || optionalUser.get().getCurrentStatus().equals(Status.DELETED)) {
-            throw new UserNotFoundException("User with email:" + email + " not found or has been Banned! Please Signup first then continue!!");
-        }
-        return optionalUser.get();
     }
 
 }

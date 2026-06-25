@@ -8,6 +8,7 @@ import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.time.format.DateTimeParseException;
 import java.util.zip.DataFormatException;
 
 @ControllerAdvice
@@ -17,17 +18,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<String> handleNullPointerException(NullPointerException e){
-        return new ResponseEntity<>("Unknown issue encountered. Please Try again later!",HttpStatus.SERVICE_UNAVAILABLE);
+        return new ResponseEntity<>("Unknown issue encountered!! Please Try again later!",HttpStatus.SERVICE_UNAVAILABLE);
     }
 
-    @ExceptionHandler(DataFormatException.class)
-    public ResponseEntity<String> handleDateFormatException(DataFormatException e){
-        return new ResponseEntity<>("Unknown issue encountered. Please Try again later!",HttpStatus.SERVICE_UNAVAILABLE);
-    }
     @ExceptionHandler(MissingRequestCookieException.class)
     public ResponseEntity<String> handleMissingRequestCookieException(MissingRequestCookieException e)
     {
-        return new ResponseEntity<>("Cookies are missing! Please login again you have been logged out!!",HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>("Cookies are missing!! Please login again you have been logged out!!",HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<String> handleDateTimeParseException(DateTimeParseException e){
+        return new ResponseEntity<>("Invalid Date of Birth!! Please enter proper Date(DD/MM/YYYY) and try again!",HttpStatus.UNPROCESSABLE_CONTENT);
     }
 /*
     @ExceptionHandler(ExpiredJwtException.class)
@@ -58,6 +60,13 @@ public class GlobalExceptionHandler {
     {
         return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler(InvalidUserInput.class)
+    public ResponseEntity<String> handleInvalidUserInput(InvalidUserInput e)
+    {
+        return new ResponseEntity<>(e.getMessage(),HttpStatus.UNPROCESSABLE_CONTENT);
+    }
+
 
     /*
     @ExceptionHandler(InvalidTokenException.class)
