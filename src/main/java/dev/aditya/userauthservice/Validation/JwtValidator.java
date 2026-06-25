@@ -25,7 +25,7 @@ public class JwtValidator {
         this.sessionRepository =sessionRepository;
     }
 
-    public Claims validate(String token, TokenType tokenType) throws InvalidTokenException, SessionNotExistException {
+    public Claims validate(String token, TokenType tokenType) {
         if(token == null){
             throw new  InvalidTokenException("Token is NULL! Please try again!!");
         }
@@ -36,12 +36,12 @@ public class JwtValidator {
             }
             token = token.substring(7);
             if(!sessionRepository.existsSessionByAuthTokenAndUser_CurrentStatus(token,Status.ACTIVE,Status.ACTIVE)){
-                throw new SessionNotExistException("The Session you are looking for doesn't exist. Please provide valid Authorization and try again!");
+                throw new SessionNotExistException("The Session you are looking for doesn't exist.(Possibly a token manipulator) Please provide valid Authorization and try again!");
             }
         }
         else if(!sessionRepository.existsByRefreshTokenAndCurrentStatusAndUser_CurrentStatus(token,Status.ACTIVE,Status.ACTIVE))
         {
-            throw new SessionNotExistException("The Session you are looking for doesn't exist. Please provide valid RefreshToken and try again!");
+            throw new SessionNotExistException("The Session you are looking for doesn't exist.(Possibly a token manipulator) Please provide valid RefreshToken and try again!");
         }
 
         Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();

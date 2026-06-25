@@ -5,6 +5,7 @@ import dev.aditya.userauthservice.Exceptions.*;
 import dev.aditya.userauthservice.Model.Session;
 import dev.aditya.userauthservice.Model.User;
 import dev.aditya.userauthservice.Service.IUserAuthService;
+import dev.aditya.userauthservice.Validation.ControllerValidator;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -25,14 +26,20 @@ public class UserAuthController {
     @Autowired
     IUserAuthService userAuthService;
 
+    @Autowired
+    ControllerValidator controllerValidator;
+
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDTO> signupUser(@RequestBody SignupRequestDTO signupRequestDTO)
                                                throws UserAlreadyExistsException, DataFormatException
     {
-
-        User newUser = userAuthService.signup(signupRequestDTO.getName(),signupRequestDTO.getEmail(),signupRequestDTO.getPassword(),
-                                              signupRequestDTO.getDateOfBirth(),signupRequestDTO.getPhoneNumber(),
-                                              signupRequestDTO.getAddress(),signupRequestDTO.getRole());
+        User newUser = userAuthService.signup(controllerValidator.basicStringValidationChecks("Name",signupRequestDTO.getName())
+                                              ,controllerValidator.validateEmail(signupRequestDTO.getEmail())
+                                              ,controllerValidator.basicStringValidationChecks("Password",signupRequestDTO.getPassword())
+                                              ,signupRequestDTO.getDateOfBirth()
+                                              ,controllerValidator.validatePhoneNumber(signupRequestDTO.getPhoneNumber())
+                                              ,controllerValidator.basicStringValidationChecks("Address",signupRequestDTO.getAddress())
+                                              ,controllerValidator.validateRole(signupRequestDTO.getRole()));
 
         SignupResponseDTO newSignupResponseDTO = new SignupResponseDTO();
         newSignupResponseDTO.convertToDtoFrom(newUser);
@@ -45,7 +52,8 @@ public class UserAuthController {
     public ResponseEntity<String> loginUser(@RequestBody LoginRequestDTO loginRequestDTO)
                                     throws UserNotFoundException, CredentialMismatchException
     {
-        Session newSession = userAuthService.login(loginRequestDTO.getEmail(),loginRequestDTO.getPassword());
+        Session newSession = userAuthService.login(controllerValidator.validateEmail(loginRequestDTO.getEmail())
+                                                   ,controllerValidator.basicStringValidationChecks("Password",loginRequestDTO.getPassword()));
 
         HttpHeaders newHeader = buildHeaderFromCookies("refreshToken",newSession.getRefreshToken(),1*24*60*60);
         newHeader.setBearerAuth(newSession.getAuthToken());
@@ -104,10 +112,13 @@ public class UserAuthController {
                                                 throws UserNotFoundException, DataFormatException
     {
         Claims claims =(Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal(); //userAuthService.validateToken(authToken,TokenType.AUTH);
-        User newUser = userAuthService.updateUserProfile(claims.getSubject(), profileUpdateRequestDTO.getName()
-                                                         , profileUpdateRequestDTO.getEmail(), profileUpdateRequestDTO.getDateOfBirth()
-                                                         , profileUpdateRequestDTO.getPhoneNumber(), profileUpdateRequestDTO.getAddress()
-                                                         , profileUpdateRequestDTO.getRole());
+        User newUser = userAuthService.updateUserProfile(claims.getSubject()
+                                                         ,controllerValidator.basicStringValidationChecks("Name",profileUpdateRequestDTO.getName())
+                                                         ,controllerValidator.validateEmail(profileUpdateRequestDTO.getEmail())
+                                                         ,profileUpdateRequestDTO.getDateOfBirth()
+                                                         ,controllerValidator.validatePhoneNumber(profileUpdateRequestDTO.getPhoneNumber())
+                                                         ,controllerValidator.basicStringValidationChecks("Address",profileUpdateRequestDTO.getAddress())
+                                                         ,controllerValidator.validateRole(profileUpdateRequestDTO.getRole()));
         ProfileResponseDTO profileResponseDTO=new ProfileResponseDTO();
         profileResponseDTO.convertToDtoFrom(newUser);
 
@@ -122,7 +133,8 @@ public class UserAuthController {
                                     throws UserNotFoundException, DataFormatException, SessionNotExistException
     {
         Claims claims =  (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();//userAuthService.validateToken(authToken,TokenType.AUTH);
-        User newUser = userAuthService.resetPassword(claims.getSubject(), resetPasswordRequestDTO.getPassword());
+        User newUser = userAuthService.resetPassword(claims.getSubject()
+                                                     ,controllerValidator.basicStringValidationChecks("Password",resetPasswordRequestDTO.getPassword()));
 
         HttpHeaders newHeader = buildHeaderFromCookies( "refreshToken","",0);
         newHeader.setBearerAuth("");
@@ -135,6 +147,7 @@ public class UserAuthController {
 
     // Helper methods
 
+    //creates a response cookies and then adds it into headers
     private HttpHeaders buildHeaderFromCookies(String cookieName, String cookieTokenValue,long cookieExpiryAge)
     {
         ResponseCookie responseCookie = ResponseCookie.from(cookieName,cookieTokenValue)

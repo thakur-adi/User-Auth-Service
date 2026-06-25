@@ -1,16 +1,20 @@
-package dev.aditya.userauthservice.Configuration;
+package dev.aditya.userauthservice.Security;
 
 import dev.aditya.userauthservice.Exceptions.InvalidTokenException;
 import dev.aditya.userauthservice.Exceptions.SessionNotExistException;
 import dev.aditya.userauthservice.Model.TokenType;
 import dev.aditya.userauthservice.Validation.JwtValidator;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,6 +35,8 @@ So technically Filter will always run its just that after going through the filt
 @Component//because this has been declared as a component Spring will auto execute it everytime.
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    @Autowired
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private JwtValidator jwtValidator;
     private static final List<String> AUTH_BASED_ENDPOINTS = List.of("/profile", "/reset"); //keep just servlet path, ignore context path
     private static final List<String> REFRESH_BASED_ENDPOINTS = List.of("/auth/logout", "/auth/refresh");
@@ -45,30 +51,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = "";
         try {
-            String servletPath = request.getServletPath();
+
+                String servletPath = request.getServletPath();
     //Don't use if condition as login or signup will have to pass through it. We'll have to add a check for them as well.(1.refresh_based,2.Auth_based,3.All_other)
 
-            //check for refresh expecting endpoints
+                //check for refresh expecting endpoints
                 for (String endpoint : REFRESH_BASED_ENDPOINTS) {
-                    if (servletPath.equals(endpoint)) {
+                    if (servletPath.equals(endpoint))
+                    {
                         //Extracting Tokens
-                    Optional<String>tokenOpt = Arrays.stream(request.getCookies())
+                        Optional<String>tokenOpt = Arrays.stream(request.getCookies())
                             .filter(cookie -> cookie.getName().equals("refreshToken"))
                             .map(Cookie::getValue)
                             .findAny();
-                    token=tokenOpt.get();
-//                        Cookie[] cookies =  request.getCookies();
-//                        for(Cookie c:cookies){
-//                            if(c.getName().equals("refreshToken")){
-//                                token=c.getValue();
-//                            }
-//                        }
+                        token=tokenOpt.isPresent()?tokenOpt.get():null;
+
                         //Validating Refresh Tokens
                         Claims refreshClaims = jwtValidator.validate(token, TokenType.REFRESH);
                         saveSecurityContextFromClaims(refreshClaims);
+                        break;
                     }
             }
-
                 //check for auth expecting endpoints
                 for (String endpoint : AUTH_BASED_ENDPOINTS) {
                     if (servletPath.equals(endpoint)) {
@@ -78,14 +81,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         //Validating Auth Token
                         Claims authClaims = jwtValidator.validate(token, TokenType.AUTH);
                         saveSecurityContextFromClaims(authClaims);
+                        break;
                     }
             }
-        } catch (InvalidTokenException e) {
-            throw new RuntimeException("FAILED AT MIDDLEWARE");
-        } catch (SessionNotExistException e) {
-            throw new RuntimeException(e);
+            filterChain.doFilter(request, response);
         }
-        filterChain.doFilter(request, response);
+        catch (InvalidTokenException e) {
+            /*  One way to do it -->
+                If my InvalidToken Exception inherits some other type of exception like RuntimeException or Exception
+                Then pass some other type of exception here which inherits AuthenticationException which in this case is BadCredentialsException
+                But is it always Bad Credentials? --> NO, Token Expiry doesn't come under BadCredentials. It's not right to pass a generic Exception.
+
+                jwtAuthenticationEntryPoint.commence(request,response,new BadCredentialsException(e.getMessage(),e));
+
+                Better to go with the 2nd option--> make your custom exception inherit from AuthenticationException and just use that.
+            */
+            jwtAuthenticationEntryPoint.commence(request,response,e);
+        } catch (SessionNotExistException e) {
+            jwtAuthenticationEntryPoint.commence(request,response,e);
+        } catch (ExpiredJwtException e){
+            jwtAuthenticationEntryPoint.commence(request,response,new InvalidTokenException("Token has expired! Please Login again!!"));
+        } catch (JwtException e){
+            jwtAuthenticationEntryPoint.commence(request,response,new InvalidTokenException("Invalid Token! Token manipulator detected!!!"));
+        }
     }
 
     private void saveSecurityContextFromClaims(Claims claims){

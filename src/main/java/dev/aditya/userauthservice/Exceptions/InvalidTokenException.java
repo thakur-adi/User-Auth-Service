@@ -1,6 +1,8 @@
 package dev.aditya.userauthservice.Exceptions;
 
-public class InvalidTokenException extends Exception{
+import org.springframework.security.core.AuthenticationException;
+
+public class InvalidTokenException extends AuthenticationException {
 
     static String defaultMessage = "Invalid Token. Please try again!!";
     public InvalidTokenException(){
