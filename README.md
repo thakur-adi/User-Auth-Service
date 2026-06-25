@@ -156,10 +156,10 @@ Sensitive config is externalized via environment variables — never hardcoded. 
 
 | Variable | Description |
 |---|---|
-| `DB_URL` | JDBC connection URL (e.g. `jdbc:postgresql://localhost:5432/userdb`) |
-| `DB_USERNAME` | Database username |
-| `DB_PASSWORD` | Database password |
-| `JWT_SECRET` | Secret key used for signing JWTs |
+| `DATASOURCE_URL` | JDBC connection URL (e.g. "jdbc:mysql://localhost:3306/user_auth_db") |
+| `DATASOURCE_USERNAME` | Database username |
+| `DATASOURCE_PASSWORD` | Database password |
+| `JWT_SECRET_KEY` | Secret key used for signing JWTs |
 
 These are referenced in **application.properties** as:
 
