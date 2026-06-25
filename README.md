@@ -10,11 +10,11 @@ The service implements JWT-based authentication using Spring Security with refre
 ## Highlights
 
 - **Stateful JWT revocation** — tokens are persisted in DB and checked on every request; logout and password reset take effect immediately, not at token expiry
-- **Dual-token architecture** — short-lived access token in `Authorization` header + long-lived refresh token in `HttpOnly` cookie,
+- **Dual-token architecture** — short-lived access token in Authorization header + long-lived refresh token in HttpOnly cookie
 - **Global session invalidation** — password reset soft-deletes all tokens across all devices, not just the current session
-- **Custom Spring Security filter chain** — `OncePerRequestFilter` with endpoint-aware token extraction (access vs refresh) wired directly into the security config
+- **Custom Spring Security filter chain** — OncePerRequestFilter with endpoint-aware token extraction (access vs refresh) wired directly into the security config
 - **LLD-compliant design** — service layer built with clean Low-Level Design principles
-- **Secrets externalized** — JWT secret and DB credentials never hardcoded; loaded from environment variables at runtime
+- **Secrets externalized** — JWT secret and DB credentials never hardcoded, loaded from environment variables at runtime
 
 ---
 
@@ -58,9 +58,9 @@ Repository Layer (Soft-delete token management)
 ### User Management
 - Signup and login with email/password
 - **View profile** — fetch current user's details from security context
-- **Update profile** — modify user details (excluding password) via the same `/profile` endpoint, differentiated by HTTP method
+- **Update profile** — modify user details (excluding password) via the same "/profile" endpoint, differentiated by HTTP method
 - Password reset via secure validation flow (separate from profile update, logs out all devices)
-- Input validation with meaningful error messages (null, empty, invalid format)
+- Input validation with meaningful error messages (null, empty, invalid format, etc.)
 
 ---
 
@@ -79,7 +79,7 @@ Repository Layer (Soft-delete token management)
 
 ## API Endpoints
 
-All endpoints are prefixed with the context path `/user`.
+All endpoints are prefixed with the context path "/user".
 
 | Method | Endpoint | Auth Required | Description |
 |---|---|---|---|
@@ -193,7 +193,7 @@ export JWT_SECRET=your_secret_key
 
 ## Known Gaps & Roadmap
 
--  Rate limiting on **/auth/login** and **/auth/signup**
+-  Rate limiting on "/auth/login" and "/auth/signup"
 -  Account lockout after N failed login attempts
 -  Email verification on signup
 -  Structured audit logging (login events, failures, IP tracking)
