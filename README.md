@@ -1,6 +1,9 @@
-<img width="1356" height="1038" alt="image" src="https://github.com/user-attachments/assets/e2ed66d4-8b02-4a97-ad19-94032e6ce18d" /># User & Auth Service
+## User & Auth Service
 
-A production-oriented **User Management and Authentication microservice** built with **Spring Boot** and **Spring Security**. Implements a stateful dual-token architecture with full revocation support — designed with the same patterns used in real-world systems.
+The service implements JWT-based authentication using Spring Security with refresh token rotation, database-backed token validation, server-side token revocation, and a clean layered architecture. It is designed to explore backend authentication patterns commonly used in modern applications while following clean code and low-level design principles.
+
+> **Note:** This service is part of a larger E-commerce Microservices project.
+
 
 ---
 
