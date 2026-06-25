@@ -20,7 +20,6 @@ The service implements JWT-based authentication using Spring Security with refre
 
 ## Architecture Overview
 
-```
 Client
   │
   ▼
@@ -38,22 +37,21 @@ Spring Security Filter Chain
 Service Layer (LLD-compliant)
   │
 Repository Layer (Soft-delete token management)
-```
 
 ---
 
 ## Features
 
 ### Authentication
-- **JWT-based dual-token system** — Access token in `Authorization` header, Refresh token in `HttpOnly` cookie
+- **JWT-based dual-token system** — Access token in Authorization header, Refresh token in HttpOnly cookie
 - **Stateful token validation** — Every token is verified against the database, enabling real-time revocation
 - **Soft-delete on logout** — Tokens are marked as deleted rather than purged, preserving audit history
 - **Refresh token flow** — Issues a new access + refresh token pair, overwrites existing tokens in DB
 
 ### Security
 - **BCrypt password hashing** — Passwords never stored in plain text
-- **Custom `OncePerRequestFilter`** — Intercepts requests, validates tokens, and populates the security context
-- **`AuthenticationEntryPoint`** — Returns structured error responses on auth failures instead of default Spring error pages
+- **Custom OncePerRequestFilter** — Intercepts requests, validates tokens, and populates the security context
+- **AuthenticationEntryPoint** — Returns structured error responses on auth failures instead of default Spring error pages
 - **Password reset with global logout** — On successful password reset, all active sessions across all devices are invalidated
 
 ### User Management
@@ -96,7 +94,7 @@ All endpoints are prefixed with the context path `/user`.
 
 ## Token Flow
 
-```
+
 LOGIN
   └──▶ Generate Access Token (short-lived)
   └──▶ Generate Refresh Token (long-lived, HttpOnly cookie)
@@ -134,26 +132,25 @@ PASSWORD RESET
 <img width="1356" height="1078" alt="image" src="https://github.com/user-attachments/assets/c6211ee8-41f7-4d07-8a16-739e693fd4d6" />
 
 
-```
 
 ---
 
 ## Design Decisions
 
 **Why stateful JWTs?**
-Pure stateless JWTs cannot be revoked before expiry. By persisting tokens in the DB and checking on every request, the service supports immediate revocation on logout, password reset, or suspected compromise — a requirement for any real-world auth system.
+-> Pure stateless JWTs cannot be revoked before expiry. By persisting tokens in the DB and checking on every request, the service supports immediate revocation on logout, password reset, or suspected compromise — a requirement for any real-world auth system.
 
-**Why `HttpOnly` cookie for refresh token?**
-Storing the refresh token in an `HttpOnly` cookie prevents JavaScript access, mitigating XSS-based token theft.
+**Why an HttpOnly cookie for a refresh token?**
+-> Storing the refresh token in an HttpOnly cookie prevents JavaScript access, mitigating XSS-based token theft.
 
-**Why `OncePerRequestFilter`?**
+**Why OncePerRequestFilter?**
 Guarantees the filter runs exactly once per request, regardless of the servlet container, avoiding duplicate processing in forwarded/dispatched requests.
 
 ---
 
 ## Environment Variables
 
-Sensitive config is externalized via environment variables — never hardcoded. Set the following before running:
+-> Sensitive config is externalized via environment variables — never hardcoded. Set the following before running:
 
 | Variable | Description |
 |---|---|
@@ -162,7 +159,7 @@ Sensitive config is externalized via environment variables — never hardcoded. 
 | `DB_PASSWORD` | Database password |
 | `JWT_SECRET` | Secret key used for signing JWTs |
 
-These are referenced in `application.properties` as:
+These are referenced in **application.properties** as:
 
 ```properties
 spring.datasource.url=${DB_URL}
