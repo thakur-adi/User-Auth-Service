@@ -20,6 +20,7 @@ The service implements JWT-based authentication using Spring Security with refre
 
 ## Architecture Overview
 
+```
 Client
   │
   ▼
@@ -37,7 +38,7 @@ Spring Security Filter Chain
 Service Layer (LLD-compliant)
   │
 Repository Layer (Soft-delete token management)
-
+```
 ---
 
 ## Features
@@ -94,43 +95,47 @@ All endpoints are prefixed with the context path `/user`.
 
 ## Token Flow
 
-
+```
 LOGIN
   └──▶ Generate Access Token (short-lived)
   └──▶ Generate Refresh Token (long-lived, HttpOnly cookie)
   └──▶ Persist both tokens in DB
+```
 
 <img width="2720" height="2080" alt="login_signup_flow" src="https://github.com/user-attachments/assets/af1845fb-7e77-4000-a9bb-32a18934bcd5" />
 
-
+```
 AUTHENTICATED REQUEST
   └──▶ Filter extracts Access Token from Authorization header
   └──▶ Validates JWT signature + expiry
   └──▶ Checks token exists in DB and is not soft-deleted
   └──▶ Loads user claims into SecurityContext
+```
 
 <img width="2720" height="2080" alt="login_signup_flow" src="https://github.com/user-attachments/assets/6420d126-c325-49fb-9623-80c2261f5b41" />
 
-
+```
 REFRESH
   └──▶ Validate Refresh Token from cookie
   └──▶ Overwrite both tokens in DB with new pair
   └──▶ Return new Access Token + new Refresh Token cookie
+```
 
 <img width="1356" height="998" alt="image" src="https://github.com/user-attachments/assets/8451dc77-fb6b-4607-95d7-68f9ee5ff6f8" />
 
-
+```
 LOGOUT
   └──▶ Soft-delete current tokens in DB
+```
 
-
+```
 PASSWORD RESET
   └──▶ Validate request
   └──▶ Update password (BCrypt)
   └──▶ Soft-delete ALL tokens for the user (logout from every device)
+```
 
 <img width="1356" height="1078" alt="image" src="https://github.com/user-attachments/assets/c6211ee8-41f7-4d07-8a16-739e693fd4d6" />
-
 
 
 ---
@@ -138,19 +143,24 @@ PASSWORD RESET
 ## Design Decisions
 
 **Why stateful JWTs?**
+
 -> Pure stateless JWTs cannot be revoked before expiry. By persisting tokens in the DB and checking on every request, the service supports immediate revocation on logout, password reset, or suspected compromise — a requirement for any real-world auth system.
 
+
 **Why an HttpOnly cookie for a refresh token?**
+
 -> Storing the refresh token in an HttpOnly cookie prevents JavaScript access, mitigating XSS-based token theft.
 
+
 **Why OncePerRequestFilter?**
-Guarantees the filter runs exactly once per request, regardless of the servlet container, avoiding duplicate processing in forwarded/dispatched requests.
+
+-> Guarantees the filter runs exactly once per request, regardless of the servlet container, avoiding duplicate processing in forwarded/dispatched requests.
 
 ---
 
 ## Environment Variables
 
--> Sensitive config is externalized via environment variables — never hardcoded. Set the following before running:
+Sensitive config is externalized via environment variables — never hardcoded. Set the following before running:
 
 | Variable | Description |
 |---|---|
