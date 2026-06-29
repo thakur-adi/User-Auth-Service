@@ -156,7 +156,7 @@ Sensitive config is externalized via environment variables — never hardcoded. 
 
 | Variable | Description |
 |---|---|
-| `DATASOURCE_URL` | JDBC connection URL (e.g. "jdbc:mysql://localhost:3306/user_auth_db") |
+| `DATASOURCE_URL` | JDBC connection URL (e.g. "jdbc:mysql://localhost:3306/user_auth_database") |
 | `DATASOURCE_USERNAME` | Database username |
 | `DATASOURCE_PASSWORD` | Database password |
 | `JWT_SECRET_KEY` | Secret key used for signing JWTs |
@@ -180,13 +180,13 @@ jwt.secret=${JWT_SECRET}
 git clone https://github.com/your-username/user-auth-service.git
 
 # Set required environment variables
-export DB_URL=jdbc:postgresql://localhost:5432/userdb
+export DB_URL=your_db_url
 export DB_USERNAME=your_db_user
 export DB_PASSWORD=your_db_password
 export JWT_SECRET=your_secret_key
 
 # Run the service (context path: /user)
-./mvnw spring-boot:run
+./mvnw spring-boot: run
 ```
 
 ---
