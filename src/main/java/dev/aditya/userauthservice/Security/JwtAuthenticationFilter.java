@@ -112,7 +112,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         //Why? Because it's a convenient built-in implementation that already stores: Principal,Credentials,Authorities,Authenticated status. Spring Security understands it perfectly.
         //We can create our own as well -> public class CustomJwtAuthenticationToken implements Authentication {...} ---- (JwtAuthenticationToken ->already exists for OAUTH2)
         UsernamePasswordAuthenticationToken authenticationToken =
-                UsernamePasswordAuthenticationToken.authenticated(claims, claims.getSubject(), null);
+                UsernamePasswordAuthenticationToken.authenticated(claims, null, List.of()); // this factory method .authenticated() is what sets authenticated to true, which is used during filter chain to determine whether to pass the request onto controller or not.
 
         // This saves the claims into ThreadLocal(A map in thread cache unique to each thread).
         // This can now be fetched later in other layers(controller,service etc.) when required
