@@ -4,6 +4,7 @@ import dev.aditya.userauthservice.Exceptions.*;
 import dev.aditya.userauthservice.Model.Session;
 import dev.aditya.userauthservice.Model.User;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.zip.DataFormatException;
 
@@ -11,7 +12,7 @@ public interface IUserAuthService {
 
     User signup(String name, String email, String password, String dateOfBirth, String phoneNumber, String address, String role) throws UserAlreadyExistsException, DataFormatException;
 
-    Session login(String email, String password) throws UserNotFoundException, CredentialMismatchException;
+    Session login(String email, String password, Map<String,String> userHttpRequestDetails) throws UserNotFoundException, CredentialMismatchException;
 
     Session logout(UUID refreshTokenId) throws UserNotFoundException, SessionNotExistException;
 
@@ -19,8 +20,8 @@ public interface IUserAuthService {
 
     User viewUserProfile(String email) throws UserNotFoundException;
 
-    User updateUserProfile(String currentEmail, String name, String email, String dateOfBirth, String phoneNumber, String address, String role) throws UserNotFoundException, DataFormatException;
+    User updateUserProfile(String currentEmail, String name, String email, String dateOfBirth, String phoneNumber, String address, String role, Map<String,String> userHttpRequestDetails) throws UserNotFoundException, DataFormatException;
 
-    User resetPassword(String email,String password) throws UserNotFoundException, DataFormatException, SessionNotExistException;
+    User resetPassword(String email,String password, Map<String,String> userHttpRequestDetails) throws UserNotFoundException, DataFormatException, SessionNotExistException;
 
 }

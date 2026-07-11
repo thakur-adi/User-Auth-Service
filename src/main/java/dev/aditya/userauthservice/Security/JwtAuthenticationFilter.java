@@ -84,6 +84,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         break;
                     }
             }
+            //This is implemented so that we can share the request details with the owner via kafka email.
+            //Just like how we have Security Context, we also have Request Context
+            //exactly similar to security context 100%thread safe, cause these also get stored in thread locale cache
+            //This adds the ip addr of user in request context, which we can extract later.
+            String userDetails = request.getRemoteUser();
+            request.setAttribute("clientIp", userDetails == null?"Unknown User IP":userDetails);
+
+            userDetails = request.getHeader("Sec-CH-UA-Platform");
+            request.setAttribute("clientPlatform",userDetails!=null?userDetails:"Unknown Platform");
+
             filterChain.doFilter(request, response);
         }
         catch (InvalidTokenException e) {
