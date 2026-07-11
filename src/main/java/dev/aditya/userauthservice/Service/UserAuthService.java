@@ -1,5 +1,6 @@
 package dev.aditya.userauthservice.Service;
 
+import dev.aditya.userauthservice.Dto.EmailResponseDTO;
 import dev.aditya.userauthservice.Exceptions.*;
 import dev.aditya.userauthservice.Model.*;
 import dev.aditya.userauthservice.Repository.RoleRepository;
@@ -8,8 +9,11 @@ import dev.aditya.userauthservice.Repository.UserRepository;
 import dev.aditya.userauthservice.Validation.ServiceValidator;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
 import java.time.LocalDate;
@@ -38,6 +42,13 @@ public class UserAuthService implements IUserAuthService {
     @Autowired
     private ServiceValidator serviceValidator;
 
+    @Autowired
+    @Qualifier("notifKafkaTemplate")
+    private KafkaTemplate<String,String> notifKafkaTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
 
     @Override
     public User signup(String name, String email, String password, String dateOfBirth, String phoneNumber,
@@ -46,15 +57,32 @@ public class UserAuthService implements IUserAuthService {
         serviceValidator.validateNewUser(email);
         User newUser = buildNewUserFromParams(name, email, password, true,
                                               convertLocalDateFromString(dateOfBirth),phoneNumber, address, role);
+
+        notifKafkaTemplate.send("notification-signup"
+                                ,objectMapper.writeValueAsString(generateEmailTemplate(email
+                                                                    ,"SIGNUP SUCCESSFUL!!"
+                                                                    ,"Welcome, "+name.toUpperCase()
+                                                                    + "! You have been successfully registered!"
+                                                                    +"\nPlease login using registered Email '" +email
+                                                                    +"' and Password!!")));
+
         return userRepository.save(newUser);
     }
 
     @Override
-    public Session login(String email, String password) throws UserNotFoundException, CredentialMismatchException {
+    public Session login(String email, String password, Map<String,String> userHttpRequestDetails) throws UserNotFoundException, CredentialMismatchException {
 
         User existingUser = serviceValidator.validateExistingUser(email);
         serviceValidator.validateUserPassword(password,existingUser);
         Session newSession = buildNewSession(existingUser);
+
+        notifKafkaTemplate.send("notification-login", objectMapper.writeValueAsString(generateEmailTemplate(email,
+                                                    "NEW LOGIN SUCCESSFUL!",
+                                                      "Hi! "+existingUser.getName().toUpperCase()
+                                                              +".\nThere was a login attempted to your account "+email
+                                                              +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
+                                                              +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
+                                                              +".\nIf this wasn't you, please reset your password!")));
 
         return sessionRepository.save(newSession);
     }
@@ -84,18 +112,25 @@ public class UserAuthService implements IUserAuthService {
 
     @Override
     public User updateUserProfile(String currentEmail, String name, String email, String dateOfBirth, String phoneNumber,
-                                  String address, String role) throws UserNotFoundException, DataFormatException {
+                                  String address, String role, Map<String,String> userHttpRequestDetails) throws UserNotFoundException, DataFormatException {
 
         User existinguser = serviceValidator.validateExistingUser(currentEmail);
         User newUser = buildNewUserFromParams(name, email, existinguser.getPassword(),
                                 false, convertLocalDateFromString(dateOfBirth),phoneNumber,address,role);
         newUser.setId(existinguser.getId());
 
+        notifKafkaTemplate.send("notification-update-details",objectMapper.writeValueAsString(
+                                                                    generateEmailTemplate(email,"PROFILE UPDATED!!"
+                                                                    ,"Your details have been updated "+email
+                                                                           +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
+                                                                           +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
+                                                                           +". If this wasn't you please Reset your password!")));
+
         return userRepository.save(newUser);
     }
 
     @Override
-    public User resetPassword(String email, String password) throws UserNotFoundException, DataFormatException {
+    public User resetPassword(String email, String password, Map<String,String> userHttpRequestDetails) throws UserNotFoundException, DataFormatException {
         User existingUser = serviceValidator.validateExistingUser(email);
         User newUser = buildNewUserFromParams(existingUser.getName(), existingUser.getEmail(), password, true
                                               ,existingUser.getDateOfBirth()
@@ -108,6 +143,15 @@ public class UserAuthService implements IUserAuthService {
             session.setCurrentStatus(Status.DELETED);
             sessionRepository.save(session);
         }
+
+        notifKafkaTemplate.send("notification-reset-password",objectMapper.writeValueAsString(
+                                                                    generateEmailTemplate(email
+                                                                                ,"PASSWORD RESET SUCCESSFUL!!"
+                                                                                ,"Hi! "+existingUser.getName().toUpperCase()
+                                                                                    +". \nYour password has been reset successfully!"
+                                                                                    +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
+                                                                                    +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
+                                                                                    +" \nIf this wasn't you please reset again or reach out to our support!")));
         return newUser;
     }
 
@@ -195,6 +239,15 @@ public class UserAuthService implements IUserAuthService {
 
         }
         return token;
+    }
+
+    //helper to create Email Details that are supposed to be sent
+    private EmailResponseDTO generateEmailTemplate(String to, String subject, String body){
+        EmailResponseDTO emailResponseDTO = new EmailResponseDTO();
+        emailResponseDTO.setTo(to);
+        emailResponseDTO.setSubject(subject);
+        emailResponseDTO.setBody(body);
+        return emailResponseDTO;
     }
 
 }

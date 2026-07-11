@@ -7,6 +7,7 @@ import dev.aditya.userauthservice.Model.User;
 import dev.aditya.userauthservice.Service.IUserAuthService;
 import dev.aditya.userauthservice.Validation.ControllerValidator;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,7 +16,11 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.zip.DataFormatException;
 
@@ -53,7 +58,8 @@ public class UserAuthController {
                                     throws UserNotFoundException, CredentialMismatchException
     {
         Session newSession = userAuthService.login(controllerValidator.validateEmail(loginRequestDTO.getEmail())
-                                                   ,controllerValidator.basicStringValidationChecks("Password",loginRequestDTO.getPassword()));
+                                                   ,controllerValidator.basicStringValidationChecks("Password",loginRequestDTO.getPassword())
+                                                   ,getUserHttpRequestDetails());
 
         HttpHeaders newHeader = buildHeaderFromCookies("refreshToken",newSession.getRefreshToken(),1*24*60*60);
         newHeader.setBearerAuth(newSession.getAuthToken());
@@ -118,7 +124,8 @@ public class UserAuthController {
                                                          ,profileUpdateRequestDTO.getDateOfBirth()
                                                          ,controllerValidator.validatePhoneNumber(profileUpdateRequestDTO.getPhoneNumber())
                                                          ,controllerValidator.basicStringValidationChecks("Address",profileUpdateRequestDTO.getAddress())
-                                                         ,controllerValidator.validateRole(profileUpdateRequestDTO.getRole()));
+                                                         ,controllerValidator.validateRole(profileUpdateRequestDTO.getRole())
+                                                         ,getUserHttpRequestDetails());
         ProfileResponseDTO profileResponseDTO=new ProfileResponseDTO();
         profileResponseDTO.convertToDtoFrom(newUser);
 
@@ -134,7 +141,8 @@ public class UserAuthController {
     {
         Claims claims =  (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();//userAuthService.validateToken(authToken,TokenType.AUTH);
         User newUser = userAuthService.resetPassword(claims.getSubject()
-                                                     ,controllerValidator.basicStringValidationChecks("Password",resetPasswordRequestDTO.getPassword()));
+                                                    ,controllerValidator.basicStringValidationChecks("Password",resetPasswordRequestDTO.getPassword())
+                                                    ,getUserHttpRequestDetails());
 
         HttpHeaders newHeader = buildHeaderFromCookies( "refreshToken","",0);
         newHeader.setBearerAuth("");
@@ -161,5 +169,42 @@ public class UserAuthController {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add(HttpHeaders.SET_COOKIE,responseCookie.toString());
         return httpHeaders;
+    }
+
+    private Map<String,String> getUserHttpRequestDetails(){
+
+        Map<String,String> userDetails = new HashMap<>();
+    /* Fetch the thread-bound request attributes container
+    This .getRequestAttributes() method reaches inside that thread-specific locker and pulls out the container holding,
+    all the current request's metadata (headers, cookies, and custom parameters we saved).
+    The .getRequestAttributes() method returns a generic, low-level interface (RequestAttributes).
+    Because we are working in a standard web application, we explicitly cast it to its web-specific implementation(ServletRequestAttributes).
+    This unlocks the .getRequest() method, allowing us to read our custom attributes like "clientPlatform" or "clientIp"
+    */
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        if (attributes != null) {
+            /*
+            The HttpServletRequest object automatically aggregates all network and protocol metadata sent over the wire [HttpServletRequest (Jakarta Servlet)]
+            - Network Properties: Client IP addresses (getRemoteAddr()) and session IDs [HttpServletRequest (Jakarta Servlet)]
+            - HTTP Headers: Meta-information like User-Agent, Sec-CH-UA-Platform, or authentication tokens [HttpServletRequest (Jakarta Servlet)]
+            - Request Data: The URL path being called, the HTTP method (GET, POST), and query parameters [HttpServletRequest (Jakarta Servlet)].
+
+            Why is it called HttpServletRequest?
+            -> - Http: It specifically understands the HTTP/HTTPS protocol layers
+               - Servlet: It belongs to the foundational Java Servlet API (jakarta.servlet.http),
+                          which forms the core web engine underlying Spring Boot [HttpServletRequest (Jakarta Servlet)].
+               - Request: It contains the incoming data from the client, completely distinct from HttpServletResponse
+                          (which is what you send back to the client) [HttpServletRequest (Jakarta Servlet)].
+             */
+            // Extract the actual HttpServletRequest object for this thread
+            HttpServletRequest request = attributes.getRequest();
+
+            // Pull the specific values our filter saved earlier
+            userDetails.put("clientPlatform",(String) request.getAttribute("clientPlatform"));
+            userDetails.put("clientIp",(String) request.getAttribute("clientIp"));
+        }
+        return userDetails;
+
     }
 }
