@@ -58,7 +58,7 @@ public class UserAuthService implements IUserAuthService {
         User newUser = buildNewUserFromParams(name, email, password, true,
                                               convertLocalDateFromString(dateOfBirth),phoneNumber, address, role);
 
-        notifKafkaTemplate.send("notification-signup"
+        notifKafkaTemplate.send("user-signup"
                                 ,objectMapper.writeValueAsString(generateEmailTemplate(email
                                                                     ,"SIGNUP SUCCESSFUL!!"
                                                                     ,"Welcome, "+name.toUpperCase()
@@ -76,7 +76,7 @@ public class UserAuthService implements IUserAuthService {
         serviceValidator.validateUserPassword(password,existingUser);
         Session newSession = buildNewSession(existingUser);
 
-        notifKafkaTemplate.send("notification-login", objectMapper.writeValueAsString(generateEmailTemplate(email,
+        notifKafkaTemplate.send("user-login", objectMapper.writeValueAsString(generateEmailTemplate(email,
                                                     "NEW LOGIN SUCCESSFUL!",
                                                       "Hi! "+existingUser.getName().toUpperCase()
                                                               +".\nThere was a login attempted to your account "+email
@@ -119,7 +119,7 @@ public class UserAuthService implements IUserAuthService {
                                 false, convertLocalDateFromString(dateOfBirth),phoneNumber,address,role);
         newUser.setId(existinguser.getId());
 
-        notifKafkaTemplate.send("notification-update-details",objectMapper.writeValueAsString(
+        notifKafkaTemplate.send("user-update-details",objectMapper.writeValueAsString(
                                                                     generateEmailTemplate(email,"PROFILE UPDATED!!"
                                                                     ,"Your details have been updated "+email
                                                                            +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
@@ -144,7 +144,7 @@ public class UserAuthService implements IUserAuthService {
             sessionRepository.save(session);
         }
 
-        notifKafkaTemplate.send("notification-reset-password",objectMapper.writeValueAsString(
+        notifKafkaTemplate.send("user-reset-password",objectMapper.writeValueAsString(
                                                                     generateEmailTemplate(email
                                                                                 ,"PASSWORD RESET SUCCESSFUL!!"
                                                                                 ,"Hi! "+existingUser.getName().toUpperCase()
