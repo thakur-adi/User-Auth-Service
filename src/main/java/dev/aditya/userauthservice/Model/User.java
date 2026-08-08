@@ -3,28 +3,29 @@ package dev.aditya.userauthservice.Model;
 import jakarta.persistence.Entity;
 
 import jakarta.persistence.ManyToMany;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-
+@Getter
 @Entity
 public class User extends Base{
 
-    @Getter //instead of using a class level lombok getter, we use field level, to avoid sending in original Roles List as an o/p to client(Security reasons).
     private String name;
-    @Getter
+
     private String email;
-    @Getter
+
     private String password;
-    @Getter
+
     private LocalDate dateOfBirth; //Date is a legacy system. 'LocalDate' provides a robust way to represent dates without time or timezone information, thread safety etc.
-    @Getter
+
     private String phoneNumber;
-    @Getter
+
     private String address;
+    @Getter(AccessLevel.NONE)//Avoids creating getters for this, overwrites class level annotation
     @ManyToMany
     private List<Role> roles;
 
