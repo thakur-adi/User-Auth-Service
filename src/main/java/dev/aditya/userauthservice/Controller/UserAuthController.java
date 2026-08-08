@@ -69,7 +69,7 @@ public class UserAuthController {
     }
 
 
-    @PostMapping("/auth/logout")
+    @PostMapping("/ref/logout")
     public ResponseEntity<String> logoutUser() throws UserNotFoundException, SessionNotExistException
         /*public ResponseEntity<String> logoutUser(@CookieValue(name = "refreshToken") String refreshToken)
         * Used earlier before moving to central/filter based authentication*/
@@ -85,7 +85,7 @@ public class UserAuthController {
     }
 
 
-    @PostMapping("/auth/refresh")
+    @PostMapping("/ref/refresh")
     public ResponseEntity<String> refreshToken()  throws SessionNotExistException, InvalidTokenException, UserNotFoundException
         /* public ResponseEntity<String> refreshToken(@CookieValue(name = "refreshToken") String refreshToken)
         used earlier before moving to central/filter based authentication*/
@@ -99,6 +99,18 @@ public class UserAuthController {
         return new ResponseEntity<>("Tokens have been generated please continue!",newHeader,HttpStatus.CREATED);
     }
 
+    //This handles validation for other microservices, if it reaches controller that means Auth token is valid
+    @PostMapping("/validate")
+    public ResponseEntity<String> validateToken(){
+        Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        HttpHeaders newHeader = new HttpHeaders();
+        newHeader.add("X-USER-ID",claims.get("User-Id:").toString());
+        newHeader.add("X-USER-EMAIL",claims.getSubject());
+        newHeader.add("X-USER-PHONE",claims.get("Phone:").toString());
+        newHeader.add("X-USER-NAME",claims.get("Name:").toString());
+        newHeader.add("X-USER-ROLES",claims.get("Roles:").toString());
+        return new ResponseEntity<>("Successfully Validated!!",newHeader,HttpStatus.OK);
+    }
 
     @GetMapping("/profile")
     public ResponseEntity<ProfileResponseDTO> viewUserProfile() throws UserNotFoundException

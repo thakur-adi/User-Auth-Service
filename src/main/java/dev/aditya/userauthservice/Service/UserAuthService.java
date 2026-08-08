@@ -42,9 +42,9 @@ public class UserAuthService implements IUserAuthService {
     @Autowired
     private ServiceValidator serviceValidator;
 
-    @Autowired
-    @Qualifier("notifKafkaTemplate")
-    private KafkaTemplate<String,String> notifKafkaTemplate;
+//    @Autowired
+//    @Qualifier("notifKafkaTemplate")
+//    private KafkaTemplate<String,String> notifKafkaTemplate;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -58,13 +58,13 @@ public class UserAuthService implements IUserAuthService {
         User newUser = buildNewUserFromParams(name, email, password, true,
                                               convertLocalDateFromString(dateOfBirth),phoneNumber, address, role);
 
-        notifKafkaTemplate.send("user-signup"
-                                ,objectMapper.writeValueAsString(generateEmailTemplate(email
-                                                                    ,"SIGNUP SUCCESSFUL!!"
-                                                                    ,"Welcome, "+name.toUpperCase()
-                                                                    + "! You have been successfully registered!"
-                                                                    +"\nPlease login using registered Email '" +email
-                                                                    +"' and Password!!")));
+//        notifKafkaTemplate.send("user-signup"
+//                                ,objectMapper.writeValueAsString(generateEmailTemplate(email
+//                                                                    ,"SIGNUP SUCCESSFUL!!"
+//                                                                    ,"Welcome, "+name.toUpperCase()
+//                                                                    + "! You have been successfully registered!"
+//                                                                    +"\nPlease login using registered Email '" +email
+//                                                                    +"' and Password!!")));
 
         return userRepository.save(newUser);
     }
@@ -76,13 +76,13 @@ public class UserAuthService implements IUserAuthService {
         serviceValidator.validateUserPassword(password,existingUser);
         Session newSession = buildNewSession(existingUser);
 
-        notifKafkaTemplate.send("user-login", objectMapper.writeValueAsString(generateEmailTemplate(email,
-                                                    "NEW LOGIN SUCCESSFUL!",
-                                                      "Hi! "+existingUser.getName().toUpperCase()
-                                                              +".\nThere was a login attempted to your account "+email
-                                                              +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
-                                                              +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
-                                                              +".\nIf this wasn't you, please reset your password!")));
+//        notifKafkaTemplate.send("user-login", objectMapper.writeValueAsString(generateEmailTemplate(email,
+//                                                    "NEW LOGIN SUCCESSFUL!",
+//                                                      "Hi! "+existingUser.getName().toUpperCase()
+//                                                              +".\nThere was a login attempted to your account "+email
+//                                                              +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
+//                                                              +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
+//                                                              +".\nIf this wasn't you, please reset your password!")));
 
         return sessionRepository.save(newSession);
     }
@@ -119,12 +119,12 @@ public class UserAuthService implements IUserAuthService {
                                 false, convertLocalDateFromString(dateOfBirth),phoneNumber,address,role);
         newUser.setId(existinguser.getId());
 
-        notifKafkaTemplate.send("user-update-details",objectMapper.writeValueAsString(
-                                                                    generateEmailTemplate(email,"PROFILE UPDATED!!"
-                                                                    ,"Your details have been updated "+email
-                                                                           +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
-                                                                           +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
-                                                                           +". If this wasn't you please Reset your password!")));
+//        notifKafkaTemplate.send("user-update-details",objectMapper.writeValueAsString(
+//                                                                    generateEmailTemplate(email,"PROFILE UPDATED!!"
+//                                                                    ,"Your details have been updated "+email
+//                                                                           +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
+//                                                                           +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
+//                                                                           +". If this wasn't you please Reset your password!")));
 
         return userRepository.save(newUser);
     }
@@ -144,14 +144,14 @@ public class UserAuthService implements IUserAuthService {
             sessionRepository.save(session);
         }
 
-        notifKafkaTemplate.send("user-reset-password",objectMapper.writeValueAsString(
-                                                                    generateEmailTemplate(email
-                                                                                ,"PASSWORD RESET SUCCESSFUL!!"
-                                                                                ,"Hi! "+existingUser.getName().toUpperCase()
-                                                                                    +". \nYour password has been reset successfully!"
-                                                                                    +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
-                                                                                    +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
-                                                                                    +" \nIf this wasn't you please reset again or reach out to our support!")));
+//        notifKafkaTemplate.send("user-reset-password",objectMapper.writeValueAsString(
+//                                                                    generateEmailTemplate(email
+//                                                                                ,"PASSWORD RESET SUCCESSFUL!!"
+//                                                                                ,"Hi! "+existingUser.getName().toUpperCase()
+//                                                                                    +". \nYour password has been reset successfully!"
+//                                                                                    +" from\nIP Address: "+userHttpRequestDetails.get("clientUserIP")
+//                                                                                    +" & Device: "+userHttpRequestDetails.get("clientUserPlatform")
+//                                                                                    +" \nIf this wasn't you please reset again or reach out to our support!")));
         return newUser;
     }
 
@@ -160,7 +160,7 @@ public class UserAuthService implements IUserAuthService {
 
     //helper method to create a new user from DTO parameters
     private User buildNewUserFromParams(String name, String email, String password, Boolean encodePassword, LocalDate dateOfBirth,
-                                        String phoneNumber, String address, String roleName) throws DataFormatException {
+                                        String phoneNumber, String address, String roleName) {
 
         User newUser = User.builder()
                 .setName(name)
@@ -220,7 +220,8 @@ public class UserAuthService implements IUserAuthService {
                     .claim("User-Id:", user.getId())
                     .claim("Name: ", user.getName())
                     .claim("Email:", user.getEmail())
-                    .claim("Roles: ", user.getRoles().toString())
+                    .claim("Roles: ",convertRolesToString(user.getRoles()))
+                    .claim("Phone:",user.getPhoneNumber())
                     .issuer("Amazon-Copy.com")
                     .issuedAt(today)
                     .expiration(expiryDate)
@@ -250,7 +251,13 @@ public class UserAuthService implements IUserAuthService {
         return emailResponseDTO;
     }
 
+    private String convertRolesToString(List<Role> roles){
+        List<String> rolesString = roles.stream().map(role -> role.getRoleName().name()).toList();
+        String role = String.join(",",rolesString);
+        return role;
+    }
 }
+
 
 
 /*

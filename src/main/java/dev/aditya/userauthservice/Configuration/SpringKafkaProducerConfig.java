@@ -13,7 +13,7 @@ import java.util.Map;
 
 //This probably is not required as we are using spring kafka(spring kafka can handle all this under the hood).
 //Even if we remove this it can work but good practice is to utilize it.
-@Configuration
+//@Configuration
 public class SpringKafkaProducerConfig {
     @Bean
     public ProducerFactory<String, String> producerFactory() {
