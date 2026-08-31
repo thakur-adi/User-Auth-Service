@@ -101,7 +101,7 @@ public class UserAuthController {
 
     //This handles validation for other microservices, if it reaches controller that means Auth token is valid
     @PostMapping("/validate")
-    public ResponseEntity<String> validateToken(){
+    public ResponseEntity<String> validateToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authToken){
         Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         HttpHeaders newHeader = new HttpHeaders();
         newHeader.add("X-USER-ID",claims.get("User-Id:").toString());
@@ -109,6 +109,10 @@ public class UserAuthController {
         newHeader.add("X-USER-PHONE",claims.get("Phone:").toString());
         newHeader.add("X-USER-NAME",claims.get("Name:").toString());
         newHeader.add("X-USER-ROLES",claims.get("Roles:").toString());
+        //This is solely added here for Order Service.
+        //Order Service gets called directly from Cart Service which needs to attach the complete token to its header, so that Order Service can also validate the requests by hitting this endpoint.
+        //Maybe in future will think of some better way to implement internal calling systems.
+        newHeader.setBearerAuth(authToken);
         return new ResponseEntity<>("Successfully Validated!!",newHeader,HttpStatus.OK);
     }
 
