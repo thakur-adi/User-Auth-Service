@@ -213,7 +213,7 @@ public class UserAuthService implements IUserAuthService {
         String token;
         //Switch case fails for some reason
         if (tokenType.equals(TokenType.AUTH)) {
-            expiryInMS = today.getTime() + 10 * 60 * 1000; //10 mins validity
+            expiryInMS = today.getTime() + 30 * 60 * 1000; //10 mins validity -> increased to 30mins for testing purposes
             expiryDate.setTime(expiryInMS);
             token = Jwts.builder()
                     .subject(user.getEmail())
