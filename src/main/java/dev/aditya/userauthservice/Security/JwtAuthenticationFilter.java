@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private JwtValidator jwtValidator;
     private static final List<String> AUTH_BASED_ENDPOINTS = List.of("/profile", "/reset","/validate"); //keep just servlet path, ignore context path
-    private static final List<String> REFRESH_BASED_ENDPOINTS = List.of("/ref/logout", "/ref/refresh");
+    private static final List<String> REFRESH_BASED_ENDPOINTS = List.of("/logout", "/refresh");
 
 
     JwtAuthenticationFilter(JwtValidator jwtValidator) {

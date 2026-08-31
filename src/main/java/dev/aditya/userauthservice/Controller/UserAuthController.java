@@ -69,7 +69,7 @@ public class UserAuthController {
     }
 
 
-    @PostMapping("/ref/logout")
+    @PostMapping("/logout")
     public ResponseEntity<String> logoutUser() throws UserNotFoundException, SessionNotExistException
         /*public ResponseEntity<String> logoutUser(@CookieValue(name = "refreshToken") String refreshToken)
         * Used earlier before moving to central/filter based authentication*/
@@ -85,7 +85,7 @@ public class UserAuthController {
     }
 
 
-    @PostMapping("/ref/refresh")
+    @PostMapping("/refresh")
     public ResponseEntity<String> refreshToken()  throws SessionNotExistException, InvalidTokenException, UserNotFoundException
         /* public ResponseEntity<String> refreshToken(@CookieValue(name = "refreshToken") String refreshToken)
         used earlier before moving to central/filter based authentication*/
