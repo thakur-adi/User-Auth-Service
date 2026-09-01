@@ -94,7 +94,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             userDetails = request.getHeader("Sec-CH-UA-Platform");
             request.setAttribute("clientPlatform",userDetails!=null?userDetails:"Unknown Platform");
 
-            filterChain.doFilter(request, response);
+            // This doesn't force the exit of current method.
+            // It simply means "hand over control to the next filter in the chain (or the controller),
+            // wait for that entire process to finish, and then come back here to execute whatever is left".
+            filterChain.doFilter(request, response);// This moves the request forward down the chain
         }
         catch (InvalidTokenException e) {
             /*  One way to do it -->
