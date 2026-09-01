@@ -72,7 +72,7 @@ The User & Auth Service exposes a protected `/validate` endpoint that allows oth
 For protected operations, a calling microservice forwards the user's access token to the User & Auth Service using a load-balanced RestTemplate.
 
 ```text
-Product Catalog Service
+Product-Catalog Service/Cart-Service/Order-Service
         │
         │ Access Token
         ▼
