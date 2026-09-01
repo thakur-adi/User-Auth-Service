@@ -66,14 +66,14 @@ Repository Layer (Soft-delete token management)
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Spring Boot |
-| Security | Spring Security |
-| Auth | JWT (custom validator) |
-| Password Hashing | BCrypt |
-| Database | (MySQL) |
-| Build Tool | Maven |
+|    Layer         |       Technology        |
+|------------------|-------------------------|
+| Framework        | Spring Boot             |
+| Security         | Spring Security         |
+| Auth             | JWT (custom validator)  |
+| Password Hashing | BCrypt                  |
+| Database         | (MySQL)                 |
+| Build Tool       | Maven                   |
 
 ---
 
@@ -81,15 +81,15 @@ Repository Layer (Soft-delete token management)
 
 All endpoints are prefixed with the context path "/user".
 
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| `POST` | `/user/signup` | No | Register a new user |
-| `POST` | `/user/login` | No | Login, returns access + refresh tokens |
-| `GET` | `/user/profile` | Access Token | View current user's profile |
-| `POST` | `/user/profile` | Access Token | Update profile details (excluding password) |
-| `POST` | `/user/reset` | Access Token | Reset password, invalidates all sessions |
-| `POST` | `/user/auth/refresh` | Refresh Token (Cookie) | Issue new access + refresh token pair |
-| `POST` | `/user/auth/logout` | Refresh Token (Cookie) | Invalidate current session |
+| Method |    Endpoint     |    Auth Required       |                Description                  |
+|--------|-----------------|------------------------|---------------------------------------------|
+| `POST` | `/user/signup`  | No                     | Register a new user                         |
+| `POST` | `/user/login`   | No                     | Login, returns access + refresh tokens      |
+| `GET`  | `/user/profile` | Access Token           | View current user's profile                 |
+| `POST` | `/user/profile` | Access Token           | Update profile details (excluding password) |
+| `POST` | `/user/reset`   | Access Token           | Reset password, invalidates all session     |
+| `POST` | `/user/refresh` | Refresh Token (Cookie) | Issue new access + refresh token pair       |
+| `POST` | `/user/logout`  | Refresh Token (Cookie) | Invalidate current session                  |
 
 ---
 
@@ -154,12 +154,12 @@ PASSWORD RESET
 
 Sensitive config is externalized via environment variables — never hardcoded. Set the following before running:
 
-| Variable | Description |
-|---|---|
-| `DATASOURCE_URL` | JDBC connection URL (e.g. "jdbc:mysql://localhost:3306/user_auth_database") |
-| `DATASOURCE_USERNAME` | Database username |
-| `DATASOURCE_PASSWORD` | Database password |
-| `JWT_SECRET_KEY` | Secret key used for signing JWTs |
+|    Variable           |                           Description                                       |
+|-----------------------|-----------------------------------------------------------------------------|
+| `DATASOURCE_URL`      | JDBC connection URL (e.g. "jdbc:mysql://localhost:3306/user_auth_database") |
+| `DATASOURCE_USERNAME` | Database username                                                           |
+| `DATASOURCE_PASSWORD` | Database password                                                           |
+| `JWT_SECRET_KEY`      | Secret key used for signing JWTs                                            |
 
 These are referenced in **application.properties** as:
 
@@ -172,7 +172,7 @@ jwt.secret=${JWT_SECRET}
 ```
 
 ---
-
+<!--
 ## Getting Started
 
 ```bash
@@ -190,7 +190,7 @@ export JWT_SECRET=your_secret_key
 ```
 
 ---
-
+-->
 ## Known Gaps & Roadmap
 
 -  Rate limiting on "/auth/login" and "/auth/signup"
