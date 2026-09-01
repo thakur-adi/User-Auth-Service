@@ -82,7 +82,7 @@ LoadBalanced RestTemplate
 Eureka Service Discovery
         │
         ▼
-User & Auth Service
+User-Auth Service
         │
         ▼
 /validate
