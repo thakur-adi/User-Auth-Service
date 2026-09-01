@@ -33,6 +33,7 @@ OncePerRequestFilter (Custom JWT Filter)
 Spring Security Filter Chain
   │  ├── /user/login      → permitAll()
   │  ├── /user/signup     → permitAll()
+  │  ├── /user/validate   → authenticated()
   │  └── /**              → authenticated()
   │
 Service Layer (LLD-compliant)
@@ -64,6 +65,44 @@ Repository Layer (Soft-delete token management)
 
 ---
 
+## Service-to-Service Communication
+
+The User & Auth Service exposes a protected `/validate` endpoint that allows other microservices to validate access tokens and retrieve authenticated user information.
+
+For protected operations, a calling microservice forwards the user's access token to the User & Auth Service using a load-balanced RestTemplate.
+
+```text
+Product Catalog Service
+        │
+        │ Access Token
+        ▼
+LoadBalanced RestTemplate
+        │
+        ▼
+Eureka Service Discovery
+        │
+        ▼
+User & Auth Service
+        │
+        ▼
+/validate
+        │
+        ▼
+Spring Security Filter Chain
+        │
+        ├── Validate JWT signature + claims
+        ├── Check token existence + validity in DB
+        └── Load authenticated user information
+        │
+        ▼
+Response Headers
+        ├── X-User-Id
+        ├── X-User-Name
+        ├── X-User-Roles
+        └── ...
+```
+---
+
 ## Tech Stack
 
 |    Layer         |       Technology        |
@@ -81,15 +120,16 @@ Repository Layer (Soft-delete token management)
 
 All endpoints are prefixed with the context path "/user".
 
-| Method |    Endpoint     |    Auth Required       |                Description                  |
-|--------|-----------------|------------------------|---------------------------------------------|
-| `POST` | `/user/signup`  | No                     | Register a new user                         |
-| `POST` | `/user/login`   | No                     | Login, returns access + refresh tokens      |
-| `GET`  | `/user/profile` | Access Token           | View current user's profile                 |
-| `POST` | `/user/profile` | Access Token           | Update profile details (excluding password) |
-| `POST` | `/user/reset`   | Access Token           | Reset password, invalidates all session     |
-| `POST` | `/user/refresh` | Refresh Token (Cookie) | Issue new access + refresh token pair       |
-| `POST` | `/user/logout`  | Refresh Token (Cookie) | Invalidate current session                  |
+| Method |    Endpoint     |    Auth Required       |                Description                                      |
+|--------|-----------------|------------------------|-----------------------------------------------------------------|
+| `POST` | `/user/signup`  | No                     | Register a new user                                             |
+| `POST` | `/user/login`   | No                     | Login, returns access + refresh tokens                          |
+| `GET`  | `/user/profile` | Access Token           | View current user's profile                                     |
+| `POST` | `/user/profile` | Access Token           | Update profile details (excluding password)                     |
+| `POST` | `/user/reset`   | Access Token           | Reset password, invalidates all session                         |
+| `POST` | `/user/refresh` | Refresh Token (Cookie) | Issue new access + refresh token pair                           |
+| `POST` | `/user/logout`  | Refresh Token (Cookie) | Invalidate current session                                      |
+| `POST` | `/validate`     | Access Token           | Validate access token and return authenticated user information |
 
 ---
 
@@ -104,7 +144,7 @@ LOGIN
 
 
 ```
-AUTHENTICATED REQUEST (/profile,/reset)
+AUTHENTICATED REQUEST (/profile,/reset,/validate)
   └──▶ Filter extracts Access Token from Authorization header
   └──▶ Validates JWT signature + expiry + Checks token exists in DB and is not soft-deleted
   └──▶ Loads user claims into SecurityContext
