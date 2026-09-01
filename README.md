@@ -15,6 +15,7 @@ The service implements JWT-based authentication using Spring Security with refre
 - **Custom Spring Security filter chain** — OncePerRequestFilter with endpoint-aware token extraction (access vs refresh) wired directly into the security config
 - **LLD-compliant design** — service layer built with clean Low-Level Design principles
 - **Secrets externalized** — JWT secret and DB credentials never hardcoded, loaded from environment variables at runtime
+- **Centralized service authentication** — protected `/validate` endpoint allows other microservices to delegate access-token validation to the User-Auth Service and receive authenticated user identity and role information
 
 ---
 
